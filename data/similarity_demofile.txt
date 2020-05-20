@@ -1,0 +1,9 @@
+Short-term, or even near-real-time (i.e., operational), situations that often are associated with customer service and real-time customer interaction.
+
+High-level trends (i.e., more tactical) that drive longer cycle decisions, such as changes in inflation or interest rates that affect investment decisions. 
+
+Threats and opportunities such as regulatory and legal changes (e.g., Brexit) or actions by competitors. 
+
+Random external events, which can be rare or frequent, such as weather-related disruptions. 
+
+Periodic or cyclical events, such as those related to aging infrastructure, which may warrant a series of responses over time.
