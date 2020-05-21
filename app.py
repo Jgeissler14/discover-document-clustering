@@ -13,9 +13,6 @@ ROOT_DIR = os.path.abspath(os.curdir)
 DATA_DIR = os.path.join(os.path.abspath(os.curdir), 'data')
 
 
-
-
-
 # Get list of documents in location #1
 
 # Get list of documents in location #2
@@ -27,45 +24,52 @@ def get_docs(location= os.curdir):
 
 
 
+if __name__ == '__main__':
+    import sys
+    
+    if len(sys.argv) != 3:
+        print('Incorrect number of parameters entered. Please refer to the README on the input parameters.')
+        exit()
+    else:
+        doc_1 = sys.argv[1]
+        doc_2 = sys.argv[2]
+        
 file_docs = []
 
-
 # Open the document file
-with open('data/similarity_demofile.txt') as f:
+with open(DATA_DIR + '\\' + doc_1) as f:
     tokens = sent_tokenize(f.read())
     for line in tokens:
         file_docs.append(line)
 
-print("Number of documents:",len(file_docs))
+print("Number of documents:", len(file_docs))
 
 # Tokenize words for each sentence
 gen_docs = [[w.lower() for w in word_tokenize(text)] for text in file_docs]
 
 # Create gensim dictionary with ID as the key, and word token as the value
 dictionary = gensim.corpora.Dictionary(gen_docs)
-print(dictionary.token2id)
+# print(dictionary.token2id)
 
-# Create a bag of words corpus, passing the tokenized list of words to the Dictionary.doc2bow()
-
+### Create a bag of words corpus, passing the tokenized list of words to the Dictionary.doc2bow()
 corpus = [dictionary.doc2bow(gen_doc) for gen_doc in gen_docs]
 
-# TFIDF - down weights tokens (words) that appears frequently across documents (unlike BOW)
+# TFIDF - down weights tokens (words) that appears frequently across documents
 # Words that occur more frequently across the documents get smaller weights
-
 tf_idf = gensim.models.TfidfModel(corpus)
 for doc in tf_idf[corpus]:
     print([[dictionary[id], np.around(freq, decimals=2)] for id, freq in doc])
-
 
 # Create similarity measure object
 index_tmpfile = get_tmpfile("wordindex")
 sims = gensim.similarities.Similarity(index_tmpfile,tf_idf[corpus],
                                         num_features=len(dictionary))
 
-# Create Query Document - how similar is this query document to each document in the index. 
+# Create Query Document - how similar is this query document to each document in the index
 file2_docs = []
 
-with open ('data/similarity_demofile2.txt') as f:
+# Open the document file
+with open(DATA_DIR + '\\' + doc_2) as f:
     tokens = sent_tokenize(f.read())
     for line in tokens:
         file2_docs.append(line)
@@ -75,6 +79,8 @@ for line in file2_docs:
     query_doc = [w.lower() for w in word_tokenize(line)]
     query_doc_bow = dictionary.doc2bow(query_doc) 
 
+corpus = [dictionary.doc2bow(gen_doc) for gen_doc in gen_docs]
+tf_idf = gensim.models.TfidfModel(corpus)
 
 # Document similarities - query document against indexed documents
 
@@ -128,17 +134,3 @@ if percentage_of_similarity >= 100:
 	percentage_of_similarity = 100
 
 
-
-
-
-if __name__ == '__main__':
-    import sys
-    
-    print(sys.argv)
-    
-    # if len(sys.argv != 4):
-    #     pass
-    # user_name = sys.argv[1]
-    # project_name = sys.argv[2]
-    # directory = sys.argv[3]
-    # print('Hello world')
