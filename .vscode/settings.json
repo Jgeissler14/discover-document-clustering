@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "c:\\Users\\eric.stringfellow\\Desktop\\Projects\\discover-document-clustering\\venv\\Scripts\\python",
+    "git.ignoreLimitWarning": true,
+    "python.autoComplete.extraPaths": ["./path-to-your-code"],
+}
