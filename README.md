@@ -15,13 +15,13 @@ Install the required packages in from the'requirements.txt' file via pip: "pip i
 
 ### Input parameters
 
-1. Directory of files
+1. Filename 1 (with file extension)
+2. Filename 2 (with file extension)
 
 ### Execute Command
 
-CD to the working directory and run the following command to exeucte the script: python app.py [directory 1] [directory 2] 
-
+CD to the working directory and run the following command to exeucte the script: python app.py [filename1] [filename2]
 
 ### Output
 
-
+Right now, the script prints output text (average similarities; cumulative similarity percentage) to the command line
