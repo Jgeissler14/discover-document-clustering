@@ -229,6 +229,7 @@ if __name__ == '__main__':
     results_df = pd.DataFrame(data=d)
     print(results_df)
 
+    # Customize pandas output to ensure no text is cut off
     pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False, 'display.max_colwidth', None)
     
     # Export dataframe to CSV file
