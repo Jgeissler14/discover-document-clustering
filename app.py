@@ -1,19 +1,22 @@
 import numpy as np
 import nltk, gensim, glob, os
 from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.corpus import stopwords
 from gensim.test.utils import common_corpus, common_dictionary, get_tmpfile
-from datetime import date
+from datetime import datetime
 from read_functions import extract_text_from_docx, extract_text_from_pdf, extract_text_from_doc
 import io, sys, PyPDF2
+import pandas as pd
 
 
 # Get the current date for the filename
-today = date.today()
-today = today.strftime("%m-%d-%Y")
+today = datetime.today()
+today_str = today.strftime("%m-%d-%Y-%H%M%S")
 
 # Directory variables (root dir, data dir, etc.)
 ROOT_DIR = os.path.abspath(os.curdir)
 DATA_DIR = os.path.join(os.path.abspath(os.curdir), 'data')
+OUTPUT_DIR = os.path.join(os.path.abspath(os.curdir), 'out')
 
 def get_docx_files():
     all_docx_files = [file for file in glob.glob(DATA_DIR + "\*.docx*")]
@@ -86,18 +89,30 @@ if __name__ == '__main__':
         pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
         num_pages = pdfReader.numPages
         # Loop through pages and append to list
-        for x in range(num_pages):
-            pageObj = pdfReader.getPage(x)
+        for page_num in range(num_pages):
+            pageObj = pdfReader.getPage(page_num)
             pdf_page = pageObj.extractText()
+            # tokens = sent_tokenize(pdf_page)
             file_docs.append(pdf_page)
+            
     else:
         raise TypeError
         print('A non-txt and pdf file detected. Please use only .txt or .pdf files')
         exit()
     
+    gen_docs = []
+    stop_words = set(stopwords.words('english')) 
     
     # Tokenize (and process) words for each sentence
-    gen_docs = [gensim.utils.simple_preprocess(text, min_len=3) for text in file_docs]
+    gen_docs = [[w.lower() for w in gensim.utils.simple_preprocess(text) if w not in stop_words] for text in file_docs]
+    
+    # gen_docs = [gensim.utils.simple_preprocess(text, min_len=3) for text in file_docs if not text in stop_words]
+    
+    # for text in file_docs:
+        # for word in gensim.utils.simple_preprocess(text):
+            # if word not in stop_words:
+                # gen_docs.append(word)
+    
     
     print(gen_docs)
 
@@ -157,29 +172,30 @@ if __name__ == '__main__':
 
     print("Number of documents (sentences) in second file:", len(file2_docs))
     
+    print(file2_docs)
 
     # Array of averages (len = number of docs in the query)
     # Each entry in the list is the average similarity of the docs in the query doc compared to the corpus
     avg_sims = [] 
+
     
+    # query_doc = [[w.lower() for w in gensim.utils.simple_preprocess(text) if w not in stop_words] for text in file2_docs]
     # query_doc_bow = dictionary.doc2bow(query_doc)
-    # # find similarity for each document
     # query_doc_tf_idf = tf_idf[query_doc_bow]
-    # # print (document_number, document_similarity)
     # print('Comparing Result:', sims[query_doc_tf_idf]) 
-    # # calculate sum of similarities for each query doc
     # sum_of_sims =(np.sum(sims[query_doc_tf_idf], dtype=np.float32))
-    # # calculate average of similarity for each query doc
     # avg = sum_of_sims / len(file_docs)
-    # # print average of similarity for each query doc
     # print(f'avg: {sum_of_sims / len(file_docs)}')
-    # # add average values into array
-    # avg_sims.append(avg)  
+    # avg_sims.append(avg) 
+    
 
     for line in file2_docs:
+        # print(line)
         # tokenize & process words
         query_doc = gensim.utils.simple_preprocess(line, min_len=3)
-        # query_doc = gensim.utils.simple_preprocess(line, min_len=3)
+        # query_doc = [[w.lower() for w in gensim.utils.simple_preprocess(text) if w not in stop_words] for text in file2_docs]
+        query_doc = [words.lower() for words in query_doc if words not in stop_words]
+        print(query_doc)
         # create bag of words
         query_doc_bow = dictionary.doc2bow(query_doc)
         # find similarity for each document
@@ -195,7 +211,6 @@ if __name__ == '__main__':
         # add average values into array
         avg_sims.append(avg)  
 
-    print(query_doc)
     print('AVERAGE SIMS: ' , avg_sims)    
 
     # calculate total average
@@ -208,5 +223,16 @@ if __name__ == '__main__':
     # if percentage is greater than 100
     if percentage_of_similarity >= 100:
         percentage_of_similarity = 100
+    
+    # Export results to results dataframe
+    d = {'file_1': [doc_1], 'file_2': [doc_2], 'total_avg': [total_avg], 'similarity_rating': [percentage_of_similarity]}
+    results_df = pd.DataFrame(data=d)
+    print(results_df)
 
+    pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False, 'display.max_colwidth', None)
+    
+    # Export dataframe to CSV file
+    print(f'Saving results to {OUTPUT_DIR} directory ...')
+    results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}_sim_analysis.csv')
+    
 
