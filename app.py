@@ -1,6 +1,7 @@
 import numpy as np
-import nltk, gensim, glob, os
-from nltk.tokenize import word_tokenize, sent_tokenize
+import gensim, glob, os
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from gensim.test.utils import common_corpus, common_dictionary, get_tmpfile
 from datetime import datetime
@@ -74,6 +75,9 @@ if __name__ == '__main__':
         
     file_docs = []
     
+    # Lemmatizer object to remove stems from words
+    wordnet_lemmatizer = WordNetLemmatizer()
+    
     # Determine file extensions
     # If .txt file:
     if doc_1_ext == '.txt':
@@ -104,20 +108,15 @@ if __name__ == '__main__':
     stop_words = set(stopwords.words('english')) 
     
     # Tokenize (and process) words for each sentence
-    gen_docs = [[w.lower() for w in gensim.utils.simple_preprocess(text) if w not in stop_words] for text in file_docs]
+    # Also lemmatize each word within the documents 
+    gen_docs = [[wordnet_lemmatizer.lemmatize(w) for w in gensim.utils.simple_preprocess(text, min_len=3) if w not in stop_words] for text in file_docs]
     
-    # gen_docs = [gensim.utils.simple_preprocess(text, min_len=3) for text in file_docs if not text in stop_words]
+    print("Number of 'documents' in first file:", len(gen_docs))
+    # print(gen_docs)
     
-    # for text in file_docs:
-        # for word in gensim.utils.simple_preprocess(text):
-            # if word not in stop_words:
-                # gen_docs.append(word)
+    for x in gen_docs:
+        print(x)
     
-    
-    print(gen_docs)
-
-    print("Number of documents (sentences) in first file:", len(gen_docs))
-
     # Create gensim dictionary with ID as the key, and word token as the value
     dictionary = gensim.corpora.Dictionary(gen_docs)
     # print(dictionary.token2id)
@@ -142,6 +141,9 @@ if __name__ == '__main__':
 
     # Create Query Document - how similar is this query document to each document in the index
     file2_docs = []
+    
+    # Lemmatizer object to remove stems from words
+    wordnet_lemmatizer_1 = WordNetLemmatizer()
 
     # Determine file extensions
     # If .txt file:
@@ -165,36 +167,22 @@ if __name__ == '__main__':
             pdf_page = pageObj.extractText()
             file2_docs.append(pdf_page)
         
-        # file2_docs = tokenize_pdf_files(DATA_DIR + '\\' + doc_2)
     else:
         raise TypeError('A non-txt and pdf file detected. Please use only .txt or .pdf files')
         exit()
 
-    print("Number of documents (sentences) in second file:", len(file2_docs))
+    print("Number of 'documents' in second file:", len(file2_docs))
     
-    print(file2_docs)
+    # print(file2_docs)
 
     # Array of averages (len = number of docs in the query)
     # Each entry in the list is the average similarity of the docs in the query doc compared to the corpus
     avg_sims = [] 
 
-    
-    # query_doc = [[w.lower() for w in gensim.utils.simple_preprocess(text) if w not in stop_words] for text in file2_docs]
-    # query_doc_bow = dictionary.doc2bow(query_doc)
-    # query_doc_tf_idf = tf_idf[query_doc_bow]
-    # print('Comparing Result:', sims[query_doc_tf_idf]) 
-    # sum_of_sims =(np.sum(sims[query_doc_tf_idf], dtype=np.float32))
-    # avg = sum_of_sims / len(file_docs)
-    # print(f'avg: {sum_of_sims / len(file_docs)}')
-    # avg_sims.append(avg) 
-    
-
     for line in file2_docs:
-        # print(line)
         # tokenize & process words
         query_doc = gensim.utils.simple_preprocess(line, min_len=3)
-        # query_doc = [[w.lower() for w in gensim.utils.simple_preprocess(text) if w not in stop_words] for text in file2_docs]
-        query_doc = [words.lower() for words in query_doc if words not in stop_words]
+        query_doc = [wordnet_lemmatizer_1.lemmatize(words) for words in query_doc if words not in stop_words]
         print(query_doc)
         # create bag of words
         query_doc_bow = dictionary.doc2bow(query_doc)
@@ -234,6 +222,6 @@ if __name__ == '__main__':
     
     # Export dataframe to CSV file
     print(f'Saving results to {OUTPUT_DIR} directory ...')
-    results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}_sim_analysis.csv')
+    results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}_{doc_1_filename}_{doc_2_filename}.csv')
     
 
