@@ -3,10 +3,11 @@ import gensim, glob, os
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
+from nltk import pos_tag, ne_chunk_sents
 from gensim.test.utils import common_corpus, common_dictionary, get_tmpfile
 from datetime import datetime
-from read_functions import extract_text_from_docx, extract_text_from_pdf, extract_text_from_doc
-import io, sys, PyPDF2
+# from read_functions import extract_text_from_docx, extract_text_from_pdf, extract_text_from_doc
+import io, sys, textract
 import pandas as pd
 
 
@@ -32,28 +33,14 @@ def get_doc_files():
     return all_doc_files
 
 
-# PDF files
+# Read in PDF file and return list of unprocessed docs (sentences) from the file
 def tokenize_pdf_files(pdf_filename):
-    file_text_pdf = str()
-    pdf_file_docs = []
-    pdf_file_gen_obj = extract_text_from_pdf(pdf_filename)
-
-    # Loop through pages in pdf generator object
-    for page in pdf_file_gen_obj:
-        file_text_pdf += ' ' + page
-        file_text_pdf = file_text_pdf.lower()
-
-    pdf_sent_tokenized = sent_tokenize(file_text_pdf)
-
-    for line in pdf_sent_tokenized:
-        pdf_file_docs.append(line)
-        
-    # Tokenize & process words in each sentence
-    pdf_gen_docs = [gensim.utils.simple_preprocess(text, min_len=3) for text in pdf_file_docs]   
-
-    return pdf_gen_docs
+    raw_text = textract.process(DATA_DIR + '//' + pdf_filename, encoding='utf-8')
+    str_raw_text = raw_text.decode('utf-8')
+    pdf_token = sent_tokenize(str_raw_text)
+    
+    return pdf_token
  
-
 
 if __name__ == '__main__':
     print(sys.argv)
@@ -79,6 +66,7 @@ if __name__ == '__main__':
     wordnet_lemmatizer = WordNetLemmatizer()
     
     # Determine file extensions
+    print('Reading first file ...')
     # If .txt file:
     if doc_1_ext == '.txt':
         print('.txt file detected ...')
@@ -86,18 +74,12 @@ if __name__ == '__main__':
             tokens = sent_tokenize(f.read())
             for line in tokens:
                 file_docs.append(line)
+        print(file_docs)
 
     # If .pdf file:
     elif doc_1_ext == '.pdf':
-        pdfFileObj = open(DATA_DIR + '//' + doc_1, 'rb')
-        pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
-        num_pages = pdfReader.numPages
-        # Loop through pages and append to list
-        for page_num in range(num_pages):
-            pageObj = pdfReader.getPage(page_num)
-            pdf_page = pageObj.extractText()
-            # tokens = sent_tokenize(pdf_page)
-            file_docs.append(pdf_page)
+        print('pdf file detected ...')
+        file_docs = tokenize_pdf_files(doc_1)
             
     else:
         raise TypeError
@@ -109,13 +91,15 @@ if __name__ == '__main__':
     
     # Tokenize (and process) words for each sentence
     # Also lemmatize each word within the documents 
-    gen_docs = [[wordnet_lemmatizer.lemmatize(w) for w in gensim.utils.simple_preprocess(text, min_len=3) if w not in stop_words] for text in file_docs]
-    
+    gen_docs = [[wordnet_lemmatizer.lemmatize(w) for w in gensim.utils.simple_preprocess(text, min_len=3) if w not in stop_words ] for text in file_docs]
+        
+    # Remove 'blank' entries from the doc list
+    for docs in gen_docs:
+        print(docs, int(len(docs)))
+        if int(len(docs)) < 2:
+            gen_docs.remove(docs)
+
     print("Number of 'documents' in first file:", len(gen_docs))
-    # print(gen_docs)
-    
-    for x in gen_docs:
-        print(x)
     
     # Create gensim dictionary with ID as the key, and word token as the value
     dictionary = gensim.corpora.Dictionary(gen_docs)
@@ -146,6 +130,8 @@ if __name__ == '__main__':
     wordnet_lemmatizer_1 = WordNetLemmatizer()
 
     # Determine file extensions
+    print('Reading second file ...')
+
     # If .txt file:
     if doc_2_ext == '.txt':
         print('.txt file detected ...')
@@ -153,19 +139,11 @@ if __name__ == '__main__':
             tokens = sent_tokenize(f.read())
             for line in tokens:
                 file2_docs.append(line)
-                # tokenize & process words
 
     # If .pdf file:
     elif doc_2_ext == '.pdf':
         print('pdf file detected ...')
-        pdfFileObj = open(DATA_DIR + '//' + doc_2, 'rb')
-        pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
-        num_pages = pdfReader.numPages
-        # Loop through pages and append to list
-        for x in range(num_pages):
-            pageObj = pdfReader.getPage(x)
-            pdf_page = pageObj.extractText()
-            file2_docs.append(pdf_page)
+        file2_docs = tokenize_pdf_files(doc_2)
         
     else:
         raise TypeError('A non-txt and pdf file detected. Please use only .txt or .pdf files')
@@ -183,7 +161,12 @@ if __name__ == '__main__':
         # tokenize & process words
         query_doc = gensim.utils.simple_preprocess(line, min_len=3)
         query_doc = [wordnet_lemmatizer_1.lemmatize(words) for words in query_doc if words not in stop_words]
-        print(query_doc)
+        
+        # If a blank row, skip to the next row
+        print(query_doc, int(len(query_doc)))
+        if int(len(query_doc)) < 1:
+            continue
+        
         # create bag of words
         query_doc_bow = dictionary.doc2bow(query_doc)
         # find similarity for each document
@@ -222,6 +205,6 @@ if __name__ == '__main__':
     
     # Export dataframe to CSV file
     print(f'Saving results to {OUTPUT_DIR} directory ...')
-    results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}_{doc_1_filename}_{doc_2_filename}.csv')
+    # results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}_{doc_1_filename}_{doc_2_filename}.csv')
     
 
