@@ -3,12 +3,12 @@ import gensim, glob, os
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
-from nltk import pos_tag, ne_chunk_sents
+from nltk import pos_tag, ne_chunk_sents, defaultdict
 from gensim.test.utils import common_corpus, common_dictionary, get_tmpfile
 from datetime import datetime
-# from read_functions import extract_text_from_docx, extract_text_from_pdf, extract_text_from_doc
 import io, sys, textract
 import pandas as pd
+import spacy, re
 
 
 # Get the current date for the filename
@@ -20,18 +20,18 @@ ROOT_DIR = os.path.abspath(os.curdir)
 DATA_DIR = os.path.join(os.path.abspath(os.curdir), 'data')
 OUTPUT_DIR = os.path.join(os.path.abspath(os.curdir), 'out')
 
-def get_docx_files():
-    all_docx_files = [file for file in glob.glob(DATA_DIR + "\*.docx*")]
-    return all_docx_files
+# List of supported file extensions
+supported_files = ["\*.pdf*", "\*.txt*"] 
 
-def get_pdf_files():
-    all_pdf_files = [file for file in glob.glob(DATA_DIR + "\*.pdf*")]
-    return all_pdf_files
+# List to gather all filenames in the 'data' directory
+all_files = list()
 
-def get_doc_files():
-    all_doc_files = [file for file in glob.glob(DATA_DIR + "\*.doc*")]
-    return all_doc_files
+# Find all valid files in the 'data' directory and append to 'all_files' list
+for extension in supported_files:   
+    for file in glob.glob(DATA_DIR + extension):
+        all_files.append(file)
 
+# print('All files: ',  all_files)
 
 # Read in PDF file and return list of unprocessed docs (sentences) from the file
 def tokenize_pdf_files(pdf_filename):
@@ -39,11 +39,43 @@ def tokenize_pdf_files(pdf_filename):
     str_raw_text = raw_text.decode('utf-8')
     pdf_token = sent_tokenize(str_raw_text)
     
-    return pdf_token
+    return pdf_token, str_raw_text
+ 
+def named_entity_counts(raw_text):
+    # Create spacy doc
+    nlp = spacy.load('en_core_web_sm')
+    doc = nlp(raw_text)
+    
+    # Store the number of words in the doc
+    tot_num_words = len(doc)
+
+    # Create list of named entities along with their labels
+    doc_entities = [[re.sub('  ', ' ', re.sub('\r',' ',re.sub('\n', ' ', ent.text))).strip(), ent.label_, ] 
+                    for ent in doc.ents if ent.text.isnumeric() == False] 
+
+    # Create defaultdict to list the entities and their counts
+    entities_cnt = defaultdict(int)
+    for entity, ent_label in doc_entities:
+        entities_cnt[entity] +=1
+
+    # Sort the entities list by the number of occurrences 
+    entities_cnt_sorted = sorted(entities_cnt.items(), key=lambda x: x[1], reverse=True)
+    
+    return entities_cnt_sorted, tot_num_words
+
  
 
 if __name__ == '__main__':
-    print(sys.argv)
+    # print(sys.argv)
+
+    
+    
+    def get_pdf_files():
+        all_pdf_files = [file for file in glob.glob(DATA_DIR + "\*.pdf*")]
+        return all_pdf_files
+    
+    
+    
     
     if len(sys.argv) != 3:
         print('Incorrect number of parameters entered. Please refer to the README on the input parameters.')
@@ -79,7 +111,9 @@ if __name__ == '__main__':
     # If .pdf file:
     elif doc_1_ext == '.pdf':
         print('pdf file detected ...')
-        file_docs = tokenize_pdf_files(doc_1)
+        file_docs, pdf_str_1 = tokenize_pdf_files(doc_1)
+        pdf_entities_1, total_words_pdf_1  = named_entity_counts(pdf_str_1)
+        print(pdf_entities_1,total_words_pdf_1)
             
     else:
         raise TypeError
@@ -143,8 +177,9 @@ if __name__ == '__main__':
     # If .pdf file:
     elif doc_2_ext == '.pdf':
         print('pdf file detected ...')
-        file2_docs = tokenize_pdf_files(doc_2)
-        
+        file2_docs, pdf_str_2 = tokenize_pdf_files(doc_2)
+        pdf_entities_2, total_words_pdf_2  = named_entity_counts(pdf_str_2)
+        print(pdf_entities_2, total_words_pdf_2)
     else:
         raise TypeError('A non-txt and pdf file detected. Please use only .txt or .pdf files')
         exit()
