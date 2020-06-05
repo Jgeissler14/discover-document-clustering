@@ -7,6 +7,7 @@ A 'similarity threshold' - a value between 0 and 1 - can be set so that if a doc
 ## Preparing the environment
 
 Install the required packages in from the'requirements.txt' file via pip: "pip install  -r requirements.txt"
+Please note that the script utilizes the Spacy package so please have both 'en_core_web_sm' and 'en_core_web_lg' available (e.g., "python -m spacy download en_core_web_lg").
 
 ### Assumptions for Input Files
 
