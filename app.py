@@ -39,6 +39,11 @@ for extension in supported_files:
     for file in glob.glob(QUERY_DIR + extension):
         query_files.append(file)
 
+# Check both folders to make sure valid files are in the directories
+if len(all_files) == 0 or len(query_files) == 0:
+    print('No documents located in ''data'' and/or ''query'' folder. Please add files.')
+    exit()
+
 # Initialize df to store comparison results   
 results_df = pd.DataFrame(columns=['file_1','file_2','total_avg','similarity_rating'])
 
@@ -50,30 +55,41 @@ def tokenize_pdf_files(pdf_filename):
     pdf_token = sent_tokenize(str_raw_text)
     
     return pdf_token, str_raw_text
- 
-def named_entity_counts(raw_text):
+
+# Create spacy object
+nlp = spacy.load('en_core_web_lg')
+# nlp = spacy.load('en_core_web_sm')
+
+def get_named_entity_counts(raw_text):
     # Create spacy doc
-    nlp = spacy.load('en_core_web_sm')
-    # nlp = spacy.load('en_core_web_lg')
     doc = nlp(raw_text)
     
     # Store the number of words in the doc
     tot_num_words = len(doc)
 
     # Create list of named entities along with their labels
-    doc_entities = [[re.sub('  ', ' ', re.sub('\r',' ',re.sub('\n', ' ', ent.text))).strip(), ent.label_, ] 
+    doc_entities = [[re.sub('  ', ' ', re.sub('\r',' ',re.sub('\n', ' ', ent.text))).strip().lower(), ent.label_, ] 
                     for ent in doc.ents if ent.text.isnumeric() == False and ent.text.startswith('https://') == False] 
     
+    # print(doc_entities)
 
     # Create defaultdict to list the entities and their counts
     entities_cnt = defaultdict(int)
+    
+    # Create frequency count for each of the entities
     for entity, ent_label in doc_entities:
         entities_cnt[entity] +=1
 
     # Sort the entities list by the number of occurrences 
     entities_cnt_sorted = sorted(entities_cnt.items(), key=lambda x: x[1], reverse=True)
     
-    return entities_cnt_sorted, tot_num_words
+    # Get the entity frequency % in the file (entity cnt / total doc length)
+    ent_doc_freq_list = [[entity[0],  entity[1], entity[1]/tot_num_words, np.log(1 + int(entity[1]))] 
+                         for entity in entities_cnt_sorted]
+    
+    print(ent_doc_freq_list)
+    
+    return ent_doc_freq_list
 
  
 
@@ -115,8 +131,8 @@ if __name__ == '__main__':
         # If .pdf file:
         elif doc_1_ext == '.pdf':
             file_docs, pdf_str_1 = tokenize_pdf_files(doc_1)
-            pdf_entities_1, total_words_pdf_1  = named_entity_counts(pdf_str_1)
-            # print(pdf_entities_1,total_words_pdf_1)
+            pdf_entities_1  = get_named_entity_counts(pdf_str_1)
+            # print(pdf_entities_1)
                 
         else:
             raise TypeError
@@ -188,16 +204,14 @@ if __name__ == '__main__':
             # If .pdf file:
             elif doc_2_ext == '.pdf':
                 file2_docs, pdf_str_2 = tokenize_pdf_files(doc_2)
-                pdf_entities_2, total_words_pdf_2  = named_entity_counts(pdf_str_2)
-                # print(pdf_entities_2, total_words_pdf_2)
+                pdf_entities_2 = get_named_entity_counts(pdf_str_2)
+                # print(pdf_entities_2)
             else:
                 raise TypeError('A non-txt and pdf file detected. Please use only .txt or .pdf files')
                 exit()
 
-            print("Number of 'documents' in second file:", len(file2_docs))
+            # print("Number of 'documents' in second file:", len(file2_docs))
             
-            # print(file2_docs)
-
             # Array of averages (len = number of docs in the query)
             # Each entry in the list is the average similarity of the docs in the query doc compared to the corpus
             avg_sims = [] 
@@ -224,7 +238,9 @@ if __name__ == '__main__':
                 # calculate average of similarity for each query doc
                 avg = sum_of_sims / len(file_docs)
                 # print average of similarity for each query doc
-                print(f'avg: {sum_of_sims / len(file_docs)}')
+                
+                # print(f'avg: {sum_of_sims / len(file_docs)}')
+                
                 # add average values into array
                 avg_sims.append(avg)  
 
@@ -255,8 +271,8 @@ if __name__ == '__main__':
     pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False, 'display.max_colwidth', None)
     
     # Export dataframe to CSV file
-    print(f'Saving results to {OUTPUT_DIR} directory ...')
-    results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
+    # print(f'Saving results to {OUTPUT_DIR} directory ...')
+    # results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
 
     
 
