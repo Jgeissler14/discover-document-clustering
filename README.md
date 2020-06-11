@@ -2,7 +2,7 @@
 
 This Python script is intended to analyze and classify documents in a large corpus, through cluster analysis, into groups of other similar documents.
 
-A 'similarity threshold' - a value between 0 and 1 - can be set so that if a document is as similar to another document (i.e., has a similiarity rating greater than or equal to the similarity threshold), the documents are grouped together.
+(under construction) A 'similarity threshold' - a value between 0 and 1 - can be set so that if a document is as similar to another document (i.e., has a similiarity rating greater than or equal to the similarity threshold), the documents are grouped together.
 
 ## Preparing the environment
 
@@ -11,19 +11,16 @@ Please note that the script utilizes the Spacy package so please have both 'en_c
 
 ### Assumptions for Input Files
 
-1. The files in the directory are either .txt or .pdf files
-2. The files are located in the "data" folder within the root directory
+1. The files are located in one of two directories in the root project directory: "data" and "query".
+2. The files in the directories are either .txt or .pdf files
 
 ### Input parameters
 
-1. Filename 1 (with file extension)
-2. Filename 2 (with file extension)
-3. Similarity threshold (TBD)
+None
 
 ### Execute Command
 
-CD to the working directory and run the following command to exeucte the script: python app.py [filename1] [filename2].
-NOTE: The full filepath is not required as part of the input parameters. For example, if your file is called "filename.pdf", please enter just "filename.pdf".
+CD to the working directory and run the following command to exeucte the script: "python app.py". The script will execute and will extract the text from the files located in the "data" and "query" directories.
 
 ### Output
 

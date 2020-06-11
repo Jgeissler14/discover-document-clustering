@@ -60,6 +60,97 @@ def tokenize_pdf_files(pdf_filename):
 nlp = spacy.load('en_core_web_lg')
 # nlp = spacy.load('en_core_web_sm')
 
+
+
+similiarity_rating_avg_cumul = list()
+
+# Function to create a list of similarity ratings for the most common entities between docs
+def get_entity_similarities(pdf_entities_1, pdf_entities_2): 
+    
+    # Initialize empty list to house entity similarity comparisons
+    entity_similarities = list() 
+    
+    doc_1_entities = [term_1 for term_1, _ , _ , _ in pdf_entities_1[:10]]
+    doc_2_entities = [term_2 for term_2, _ , _ , _ in pdf_entities_2[:10]]
+
+    # Create lists of doc objects in bulk with nlp.pipe
+    ents_1 = list(nlp.pipe(doc_1_entities))
+    ents_2 = list(nlp.pipe(doc_2_entities))
+    print(ents_1, ents_2)
+    
+    duplicated_ents = list()
+    no_vector_ents = list()
+    idx_list = list()
+    idy_list = list()
+    
+    # Remove entities without word vectors:
+    for idx, x in enumerate(ents_1):
+    # Check if entity has a vector; if not, remove it from the list
+        if x.vector_norm == 0:
+            print('*** no vector found', x)
+            ents_1.pop(idx)
+            no_vector_ents.append(x)
+    for idy, y in enumerate(ents_2):
+        # Check if entity has a vector; if not, remove it from the list
+        if y.vector_norm == 0:
+            print('*** no vector found', y)
+            ents_2.pop(idy)
+            no_vector_ents.append(y)
+    
+    # Find duplicate entities from both docs
+    for idx, x in enumerate(ents_1):
+        for idy, y in enumerate(ents_2):
+            # Check if entities are duplicates       
+            if x.text == y.text and x.similarity(y) == 1.0:
+                # If so, add the indexes to two lists
+                idx_list.append(idx)
+                idy_list.append(idy)
+                duplicated_ents.append(x)
+                
+                # Add the similarity rating to the result list
+                # entity_similarities.append(x.similarity(y))
+
+    # Reverse the sorting
+    idx_list.sort(reverse=True)
+    idy_list.sort(reverse=True)
+
+    # Remove the duplicated items
+    for x_indeces in idx_list:
+        ents_1.pop(x_indeces)
+    for y_indeces in idy_list:
+        ents_2.pop(y_indeces)
+    
+    
+    print('no_vector_ents ... ', no_vector_ents)
+    print('duplicated_ents ... ', duplicated_ents, len(duplicated_ents))
+    print('**** after duplicate removal ***')
+    print(ents_1)
+    print(ents_2)
+    
+    # Loop through both lists to get similarity ratings between the two lists of entities
+    for f in ents_1:
+        for b in ents_2:
+            print(f, b, f.similarity(b))
+            entity_similarities.append(f.similarity(b))
+    
+    return entity_similarities, len(set(duplicated_ents))
+
+# Function to get the log frequency products between the two lists 
+def get_entity_log_freqs(pdf_entities_1, pdf_entities_2):    
+    
+    # Initialize empty list to house entity log_frequency (normalized) values
+    entity_log_freqs = list()
+    
+    doc_1_log_freqs = [log_freq_1 for _, _ , _ , log_freq_1 in pdf_entities_1[:10]]
+    doc_2_log_freqs = [log_freq_2 for _, _ , _ , log_freq_2 in pdf_entities_2[:10]]
+    
+    for x in doc_1_log_freqs:
+        for y in doc_2_log_freqs:
+            entity_log_freqs.append(x * y)
+    
+    return entity_log_freqs
+            
+
 def get_named_entity_counts(raw_text):
     # Create spacy doc
     doc = nlp(raw_text)
@@ -71,8 +162,6 @@ def get_named_entity_counts(raw_text):
     doc_entities = [[re.sub('  ', ' ', re.sub('\r',' ',re.sub('\n', ' ', ent.text))).strip().lower(), ent.label_, ] 
                     for ent in doc.ents if ent.text.isnumeric() == False and ent.text.startswith('https://') == False] 
     
-    # print(doc_entities)
-
     # Create defaultdict to list the entities and their counts
     entities_cnt = defaultdict(int)
     
@@ -82,13 +171,22 @@ def get_named_entity_counts(raw_text):
 
     # Sort the entities list by the number of occurrences 
     entities_cnt_sorted = sorted(entities_cnt.items(), key=lambda x: x[1], reverse=True)
+    # print(entities_cnt_sorted)
     
-    # Get the entity frequency % in the file (entity cnt / total doc length)
+    # Get the entity frequency list (including counts, entity cnt / total doc length, & log frequency 
     ent_doc_freq_list = [[entity[0],  entity[1], entity[1]/tot_num_words, np.log(1 + int(entity[1]))] 
                          for entity in entities_cnt_sorted]
+ 
+    # print(ent_doc_freq_list)
+        
+    # Also get a simple list of just the entity names
+    extracted_entities = [entity[0] for entity in entities_cnt_sorted]
+    entity_cnt =    [entity[1] for entity in entities_cnt_sorted]
+    entity_freq = [entity[1]/tot_num_words for entity in entities_cnt_sorted]
+    entity_log_freq = [np.log(1 + int(entity[1])) for entity in entities_cnt_sorted]
     
-    print(ent_doc_freq_list)
-    
+    # print(extracted_entities) 
+
     return ent_doc_freq_list
 
  
@@ -139,6 +237,8 @@ if __name__ == '__main__':
             print('A non-txt and pdf file detected. Please use only .txt or .pdf files')
             exit()
         
+        
+        # Compare doc similarity (without named entities)
         gen_docs = []
         stop_words = set(stopwords.words('english')) 
         
@@ -210,6 +310,7 @@ if __name__ == '__main__':
                 raise TypeError('A non-txt and pdf file detected. Please use only .txt or .pdf files')
                 exit()
 
+            
             # print("Number of 'documents' in second file:", len(file2_docs))
             
             # Array of averages (len = number of docs in the query)
@@ -253,16 +354,51 @@ if __name__ == '__main__':
             # round the value and multiply by 100 to format it as percentage
             percentage_of_similarity = round(float(total_avg) * 100)
             # results_percentage_of_similarity.append(percentage_of_similarity)
-            print('Similarity percentage: ' , percentage_of_similarity)
-                
+            
+            # print('Similarity percentage: ' , percentage_of_similarity)
+            
+            # Append results to a dataframe
             results_df = results_df.append({'file_1': doc_1_cleaned, 
                 'file_2': doc_2_cleaned, 
                 'total_avg': total_avg,   
-                'similarity_rating': percentage_of_similarity}, ignore_index=True)
+                'similarity_rating': percentage_of_similarity}
+                                           , ignore_index=True)
+        
+        
+        ### Entity comparison ###   
+        
+        # Get similarity ratings between the entities in the two docs
+        sim_ratings, num_duplicate_ents = get_entity_similarities(pdf_entities_1, pdf_entities_2)
+        print(f'sim_ratings ... {sim_ratings}, {len(sim_ratings)}')
+          
+        if len(sim_ratings) == 0:
+            print('ALL ENTITIES WERE DUPLICATED')
+            similarity_ratings = 100
+            similiarity_rating_avg_cumul.append(100)
+        else:
+            # Get log frequency products between the entities in the two docs
+            log_freq_prod = get_entity_log_freqs(pdf_entities_1, pdf_entities_2)
+            print(f'log_freq_prod: {log_freq_prod} , {len(log_freq_prod)}')
+            
+            # Get similarity 'rating' (dot product with similarity rating * log frequency prod)
+            for sim, log in zip(sim_ratings, log_freq_prod):
+                print(sim, log, abs(sim * log))
+                similarity_ratings = sim * log
+            
+            similiarity_rating_avg =  np.mean(similarity_ratings)
+            print('Entity similarity average ...' , similiarity_rating_avg)
+            
+            # Add the terms found in both files
+            print(num_duplicate_ents)
+            similiarity_rating_avg = similiarity_rating_avg + (num_duplicate_ents*10)
 
-    # if percentage is greater than 100
-    if percentage_of_similarity >= 100:
-        percentage_of_similarity = 100
+            similiarity_rating_avg_cumul.append(similiarity_rating_avg)
+            
+    
+    print('List of all similarity ratings ... ', similiarity_rating_avg_cumul)
+    
+    # Add 'entity similarity rating' to the results dataframe
+    results_df['entity_sim_rating'] = similiarity_rating_avg_cumul
     
     # Sort results DF by the total_avg (descending)
     results_df.sort_values('total_avg',inplace=True, ascending=False)
@@ -271,10 +407,7 @@ if __name__ == '__main__':
     pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False, 'display.max_colwidth', None)
     
     # Export dataframe to CSV file
-    # print(f'Saving results to {OUTPUT_DIR} directory ...')
-    # results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
-
-    
-
+    print(f'Saving results to {OUTPUT_DIR} directory ...')
+    results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
     
 

@@ -1,0 +1,8 @@
+
+-If a word does not have a spaCy vector, either remove it or create a vector?
+
+- Use pattern matching to match certain terms based on the context of the files
+- Update the output file to include key entities and guess about what 'topic' the file dicusses
+- Tweak the spaCy model to incorporate unique orgs, people, and other named entities so that tagging is better (either add to existing categories or create new categories)
+- Tweak pipeline components (POS tagger, text classifier - how a text is classified)
+- Customize the tokenizer (add rules and exceptions to split text differently)
