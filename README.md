@@ -16,11 +16,11 @@ Please note that the script utilizes the Spacy package so please have both 'en_c
 
 ### Input parameters
 
-None
+1. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occuring entities throughout documents, please use "10" as the input parameter (e.g., "python app.py 10")
 
 ### Execute Command
 
-CD to the working directory and run the following command to exeucte the script: "python app.py". The script will execute and will extract the text from the files located in the "data" and "query" directories.
+CD to the working directory and run the following command to exeucte the script: "python app.py <num_top_words>". The script will execute and will extract the text from the files located in the "data" and "query" directories.
 
 ### Output
 

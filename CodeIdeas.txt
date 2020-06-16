@@ -1,5 +1,6 @@
 
--If a word does not have a spaCy vector, either remove it or create a vector?
+- If a word does not have a spaCy vector, remove it from the entity lists, but store it somehow in a file. That way, we can aggregate the list of terms that aren't vectorized by spaCy and we can improve the model by vectorizing those words
+- How do we incorporate 'term frequency' into the model? I want to weight the the terms that occur most frequently somehow, but I'm not sure how to do it
 
 - Use pattern matching to match certain terms based on the context of the files
 - Update the output file to include key entities and guess about what 'topic' the file dicusses
