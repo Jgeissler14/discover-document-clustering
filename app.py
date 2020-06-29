@@ -83,10 +83,18 @@ if __name__ == '__main__':
     all_ents_with_no_vector = list()
     
     # Store "num_top_words" variable from input parameter
-    num_top_words = int(sys.argv[1])
-    
+    try:
+        num_top_words = int(sys.argv[1])
+    except ValueError as wrong_param_type:
+        num_top_words = 15
+        
     # Flag for executing gensim BoW comparison 
-    gensim_flag = int(sys.argv[2])
+    try:
+        gensim_flag = int(sys.argv[2])
+    except IndexError as index_of_of_range:
+        gensim_flag = 0
+    except ValueError as wrong_param_type:
+        gensim_flag = 0
     
     # Create list to store docs from the data file  
     file_docs = []
@@ -136,7 +144,6 @@ if __name__ == '__main__':
     # Customize pandas output to ensure no text is cut off
     pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False, 'display.max_colwidth', None)
 
-    # Export dataframe to CSV file
     # print(f'Saving results to {OUTPUT_DIR} directory ...')
     # results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
 
@@ -151,20 +158,15 @@ if __name__ == '__main__':
     ####### Gensim BoW analysis
    
     if gensim_flag == 1:
-        # first_docs, second_docs, similarity_scores = run_gensim_bow()
         similarity_scores = run_gensim_bow()
-        # print(first_docs, len(first_docs))
-        # print(second_docs, len(second_docs))
         print(similarity_scores, len(similarity_scores))
         
         results_df['BOW_Comparison_score'] = similarity_scores
         
-        # print(f'Saving gensim results ...')
-    	# results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
-     
     else:
         pass
-
+    
+    # Export dataframe to CSV file
     print(f'Saving results to {OUTPUT_DIR} directory ...')
     results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
 

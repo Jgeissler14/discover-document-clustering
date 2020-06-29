@@ -33,12 +33,10 @@ for extension in supported_files:
         query_files.append(file)
 
 
-
 def run_gensim_bow():
 
 	gensim_all_files = list()
 	gensim_query_files = list()
-
 
 	# Find all valid files in the 'data' directory and append to 'all_files' list
 	for extension in supported_files:   

@@ -1,13 +1,11 @@
 # Document Clustering Code
 
-This Python script is intended to analyze and classify documents in a large corpus, through cluster analysis, into groups of other similar documents.
-
-(under construction) A 'similarity threshold' - a value between 0 and 1 - can be set so that if a document is as similar to another document (i.e., has a similiarity rating greater than or equal to the similarity threshold), the documents are grouped together.
+This Python script is intended to analyze one or more documents from a large corpus and assign similarity ratings (from 0 to 100) for each pair of documents. A similiarty score closer to 100 indicates the documents are very similar and scores closer to 0 indicate documents are dissimilar.
 
 ## Preparing the environment
 
 Install the required packages in from the'requirements.txt' file via pip: "pip install  -r requirements.txt"
-Please note that the script utilizes the Spacy package so please have both 'en_core_web_sm' and 'en_core_web_lg' available (e.g., "python -m spacy download en_core_web_lg").
+Please note that the script utilizes the Spacy package so please have the 'en_core_web_lg' spaCy model available (e.g., "python -m spacy download en_core_web_lg"). The algorithm uses word vectors so the 'large' model is required.
 
 ### Assumptions for Input Files
 
@@ -16,12 +14,13 @@ Please note that the script utilizes the Spacy package so please have both 'en_c
 
 ### Input parameters
 
-1. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occuring entities throughout documents, please use "10" as the input parameter (e.g., "python app.py 10")
+1. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occuring entities throughout documents, please use "10" as the input parameter (e.g., "python app.py 10"). By default, the top 15 most frequently occurring entities will be compared across document pairs
+2. "Bag of words" flag. Please enter a "1" as the second input parameter if you want to run a "bag of words" analysis in addition to a named-entity comparison with the document pairs. By default, this flag is turned off so only the "named entity" analysis will be conducted.
 
 ### Execute Command
 
-CD to the working directory and run the following command to exeucte the script: "python app.py <num_top_words>". The script will execute and will extract the text from the files located in the "data" and "query" directories.
+CD to the working directory and run the following command to exeucte the script: "python app.py <num_top_words> <bow_flag>". The script will execute and will extract the text from the files located in the "data" and "query" directories.
 
 ### Output
 
-Right now, the script prints output text (average similarities; cumulative similarity percentage) to the command line, as well as to a .csv file that is saved to the "out" directory within the root directory.
+The script outputs a .CSV file that contains a breakdown of each document pair that was compared, the named entity similarity score, and the "bag of words" similary score. The file is saved to the 'out' directory in the project directory.
