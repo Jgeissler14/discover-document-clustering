@@ -10,6 +10,8 @@ import pandas as pd
 import spacy, re
 from collections import Counter
 from text_preprocessing.named_entity_extract import get_named_entity_counts, get_entity_log_freqs, get_entity_similarities
+from gensim_analysis.gensim_funcs import run_gensim_bow
+from text_preprocessing.preprocessing_funcs import tokenize_pdf_files, get_clean_filename
 
 # Create spacy object
 nlp = spacy.load('en_core_web_lg')
@@ -51,22 +53,6 @@ if len(all_files) == 0 or len(query_files) == 0:
 # Initialize df to store comparison results   
 results_df = pd.DataFrame(columns=['file_1','file_2'])
 
-# Read in PDF file and return list of unprocessed docs (sentences) from the file
-def tokenize_pdf_files(pdf_filename):
-    raw_text = textract.process(pdf_filename, encoding='utf-8')
-    str_raw_text = raw_text.decode('utf-8')
-    pdf_token = sent_tokenize(str_raw_text)
-    
-    return pdf_token, str_raw_text
-
-def get_clean_filename(filename):
-    # Extract file info (extension, filename, filename without extension)
-    doc_filename, doc_ext = os.path.splitext(filename)[0], os.path.splitext(filename)[1]
-    doc = doc_filename + doc_ext
-    doc_cleaned =  doc.replace(QUERY_DIR + '\\', '')
-    doc_cleaned = doc_cleaned.replace(DATA_DIR + '\\', '')
-    
-    return doc_filename, doc_ext, doc, doc_cleaned
 
 def read_file(filename):
 
@@ -91,12 +77,16 @@ def read_file(filename):
     
     return pdf_entities
 
+
 if __name__ == '__main__':
     
     all_ents_with_no_vector = list()
     
     # Store "num_top_words" variable from input parameter
     num_top_words = int(sys.argv[1])
+    
+    # Flag for executing gensim BoW comparison 
+    gensim_flag = int(sys.argv[2])
     
     # Create list to store docs from the data file  
     file_docs = []
@@ -147,7 +137,7 @@ if __name__ == '__main__':
     pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False, 'display.max_colwidth', None)
 
     # Export dataframe to CSV file
-    print(f'Saving results to {OUTPUT_DIR} directory ...')
+    # print(f'Saving results to {OUTPUT_DIR} directory ...')
     # results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
 
     # Create set of entities without word vectors
@@ -158,12 +148,24 @@ if __name__ == '__main__':
     with open(OUTPUT_DIR + '\\' + 'no_vector_entitites' + '\\' 'no_vector_entities.txt', 'a') as filehandle:
         filehandle.writelines("%s\n" % ent for ent in ent_set)
     
-    
+    ####### Gensim BoW analysis
+   
+    if gensim_flag == 1:
+        # first_docs, second_docs, similarity_scores = run_gensim_bow()
+        similarity_scores = run_gensim_bow()
+        # print(first_docs, len(first_docs))
+        # print(second_docs, len(second_docs))
+        print(similarity_scores, len(similarity_scores))
+        
+        results_df['BOW_Comparison_score'] = similarity_scores
+        
+        # print(f'Saving gensim results ...')
+    	# results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
+     
+    else:
+        pass
 
-
-
-
-
-
+    print(f'Saving results to {OUTPUT_DIR} directory ...')
+    results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
 
 
