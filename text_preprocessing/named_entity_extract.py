@@ -42,20 +42,21 @@ def get_named_entity_counts(nlp, raw_text):
     return ent_doc_freq_list
 
 # Function to create a list of similarity ratings for the most common entities between docs
-def get_entity_similarities(nlp, pdf_entities_1, pdf_entities_2): 
+def get_entity_similarities(nlp, top_k_words, pdf_entities_1, pdf_entities_2): 
     
     # Initialize empty lists to house entity similarity comparisons
     entity_similarities = list() 
     num_duplicate_entities = int()
     no_vector_ents = list()
 
-    doc_1_entities = [term_1 for term_1, _ , _ , _ in pdf_entities_1[:10]]
-    doc_2_entities = [term_2 for term_2, _ , _ , _ in pdf_entities_2[:10]]
+    # List comprehension to get the "n" most common entities from each doc
+    doc_1_entities = [term_1 for term_1, _ , _ , _ in pdf_entities_1[:top_k_words]]
+    doc_2_entities = [term_2 for term_2, _ , _ , _ in pdf_entities_2[:top_k_words]]
 
     # Create lists of doc objects in bulk with nlp.pipe
     ents_1 = list(nlp.pipe(doc_1_entities))
     ents_2 = list(nlp.pipe(doc_2_entities))
-    # print(ents_1, ents_2)
+    print(ents_1, ents_2)
     
     idx_list = list()
     idy_list = list()
@@ -104,13 +105,13 @@ def get_entity_similarities(nlp, pdf_entities_1, pdf_entities_2):
     return entity_similarities, num_duplicate_entities, no_vector_ents
 
 # Function to get the log frequency products between the two lists 
-def get_entity_log_freqs(nlp, pdf_entities_1, pdf_entities_2):    
+def get_entity_log_freqs(nlp, top_k_words, pdf_entities_1, pdf_entities_2):    
     
     # Initialize empty list to house entity log_frequency (normalized) values
     entity_log_freqs = list()
     
-    doc_1_log_freqs = [log_freq_1 for _, _ , _ , log_freq_1 in pdf_entities_1[:10]]
-    doc_2_log_freqs = [log_freq_2 for _, _ , _ , log_freq_2 in pdf_entities_2[:10]]
+    doc_1_log_freqs = [log_freq_1 for _, _ , _ , log_freq_1 in pdf_entities_1[:top_k_words]]
+    doc_2_log_freqs = [log_freq_2 for _, _ , _ , log_freq_2 in pdf_entities_2[:top_k_words]]
     
     for x in doc_1_log_freqs:
         for y in doc_2_log_freqs:

@@ -16,6 +16,7 @@ Please note that the script utilizes the Spacy package so please have the 'en_co
 
 1. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occurring entities throughout documents, please use "10" as the input parameter (e.g., "python app.py 10"). By default, the top 15 most frequently occurring entities will be compared across document pairs
 2. "Bag of words" flag. Please enter a "1" as the second input parameter if you want to run a "bag of words" analysis in addition to a named-entity comparison with the document pairs. By default, this flag is turned off so only the "named entity" analysis will be conducted.
+NOTE: All input parameters are optional and will use default values for the "top-K" named entities (15) and whether to include the "BoW" analysis with the script execution (0-off).
 
 ### Execute Command
 

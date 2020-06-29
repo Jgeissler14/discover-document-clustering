@@ -1,19 +1,14 @@
 import numpy as np
 import glob, os
-from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import sent_tokenize
-from nltk.corpus import stopwords
-from nltk import pos_tag, ne_chunk_sents, defaultdict
 from datetime import datetime
-import io, sys, textract
+import io, sys
 import pandas as pd
-import spacy, re
-from collections import Counter
-from text_preprocessing.named_entity_extract import get_named_entity_counts, get_entity_log_freqs, get_entity_similarities
+import spacy
+from text_preprocessing.named_entity_extract import get_entity_log_freqs, get_entity_similarities
 from gensim_analysis.gensim_funcs import run_gensim_bow
-from text_preprocessing.preprocessing_funcs import tokenize_pdf_files, get_clean_filename
+from text_preprocessing.preprocessing_funcs import get_clean_filename, read_file
 
-# Create spacy object
+# Load spacy model
 nlp = spacy.load('en_core_web_lg')
 
 # Get the current date for the filename
@@ -53,30 +48,6 @@ if len(all_files) == 0 or len(query_files) == 0:
 results_df = pd.DataFrame(columns=['file_1','file_2'])
 
 
-def read_file(filename):
-
-    doc_filename, doc_ext, doc, doc_cleaned = get_clean_filename(filename)
-        
-    print(f'Reading file ... {doc_cleaned}')
-    
-    # If .txt file:
-    if doc_ext == '.txt':
-        # with open(DATA_DIR + '\\' + doc_2) as f:
-        with open(doc) as f:
-            tokens = sent_tokenize(f.read())
-            for line in tokens:
-                file_docs.append(line)
-        # If .pdf file:
-    elif doc_ext == '.pdf':
-        file2_docs, pdf_str = tokenize_pdf_files(doc)
-        pdf_entities = get_named_entity_counts(nlp, pdf_str)
-    else:
-        raise TypeError('A non-txt and pdf file detected. Please use only .txt or .pdf files')
-        exit()
-    
-    return pdf_entities
-
-
 if __name__ == '__main__':
     
     all_ents_with_no_vector = list()
@@ -95,22 +66,20 @@ if __name__ == '__main__':
     except ValueError as wrong_param_type:
         gensim_flag = 0
     
-    # Create list to store docs from the data file  
-    file_docs = []
 
     # Loop through both sets of files
     for base_file in all_files:
         doc_1_filename, doc_1_ext, doc_1, doc_1_cleaned = get_clean_filename(base_file)
-        pdf_entities_1 = read_file(base_file)
+        pdf_entities_1 = read_file(nlp, base_file)
         for query_file in query_files:
             doc_2_filename, doc_2_ext, doc_2, doc_2_cleaned = get_clean_filename(query_file)
-            pdf_entities_2 = read_file(query_file)
+            pdf_entities_2 = read_file(nlp, query_file)
             
             # Get similarity ratings between the entities in the two docs
-            sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, pdf_entities_1, pdf_entities_2)
+            sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words, pdf_entities_1, pdf_entities_2)
             
             # Get frequency metrics for entities
-            log_freq_prod = get_entity_log_freqs(nlp, pdf_entities_1, pdf_entities_2)
+            log_freq_prod = get_entity_log_freqs(nlp, num_top_words, pdf_entities_1, pdf_entities_2)
             # print(f'log_freq_prod: {log_freq_prod} , {len(log_freq_prod)}')
             
             # If all entities are duplicated between the two docs ...
@@ -143,9 +112,6 @@ if __name__ == '__main__':
     # Customize pandas output to ensure no text is cut off
     pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False, 'display.max_colwidth', None)
 
-    # print(f'Saving results to {OUTPUT_DIR} directory ...')
-    # results_df.to_csv(OUTPUT_DIR + '//' + f'{today_str}.csv')
-
     # Create set of entities without word vectors
     ent_set = set(all_ents_with_no_vector)
     print(f'Ents with no vector ... {ent_set}')
@@ -154,7 +120,7 @@ if __name__ == '__main__':
     with open(OUTPUT_DIR + '\\' + 'no_vector_entitites' + '\\' 'no_vector_entities.txt', 'a') as filehandle:
         filehandle.writelines("%s\n" % ent for ent in ent_set)
     
-    ####### Gensim BoW analysis
+    ############## Gensim BoW analysis ##############
    
     if gensim_flag == 1:
         similarity_scores = run_gensim_bow()
@@ -164,6 +130,8 @@ if __name__ == '__main__':
         
     else:
         pass
+    
+    ############## End Gensim BoW analysis ##############
     
     # Export dataframe to CSV file
     print(f'Saving results to {OUTPUT_DIR} directory ...')
