@@ -56,7 +56,7 @@ def get_entity_similarities(nlp, top_k_words, pdf_entities_1, pdf_entities_2):
     # Create lists of doc objects in bulk with nlp.pipe
     ents_1 = list(nlp.pipe(doc_1_entities))
     ents_2 = list(nlp.pipe(doc_2_entities))
-    print(ents_1, ents_2)
+    # print(ents_1, ents_2)
     
     idx_list = list()
     idy_list = list()

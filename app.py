@@ -65,8 +65,9 @@ if __name__ == '__main__':
         gensim_flag = 0
     except ValueError as wrong_param_type:
         gensim_flag = 0
-    
 
+    ############## Named Entity analysis ##############
+    
     # Loop through both sets of files
     for base_file in all_files:
         doc_1_filename, doc_1_ext, doc_1, doc_1_cleaned = get_clean_filename(base_file)
@@ -120,18 +121,22 @@ if __name__ == '__main__':
     with open(OUTPUT_DIR + '\\' + 'no_vector_entitites' + '\\' 'no_vector_entities.txt', 'a') as filehandle:
         filehandle.writelines("%s\n" % ent for ent in ent_set)
     
+    ############## Named Entity analysis (end) ##############
+    
     ############## Gensim BoW analysis ##############
    
+    # Run Gensim BoW script if flag is enabled
     if gensim_flag == 1:
         similarity_scores = run_gensim_bow()
         print(similarity_scores, len(similarity_scores))
         
+        # Create column in df with similarity scores
         results_df['BOW_Comparison_score'] = similarity_scores
         
     else:
         pass
     
-    ############## End Gensim BoW analysis ##############
+    ############## End Gensim BoW analysis (end) ##############
     
     # Export dataframe to CSV file
     print(f'Saving results to {OUTPUT_DIR} directory ...')
