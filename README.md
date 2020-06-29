@@ -1,6 +1,6 @@
 # Document Clustering Code
 
-This Python script is intended to analyze one or more documents from a large corpus and assign similarity ratings (from 0 to 100) for each pair of documents. A similiarty score closer to 100 indicates the documents are very similar and scores closer to 0 indicate documents are dissimilar.
+This Python script is intended to analyze one or more documents from a large corpus and assign similarity ratings (from 0 to 100) for each pair of documents. A similarity score closer to 100 indicates the documents are very similar and scores closer to 0 indicate documents are dissimilar.
 
 ## Preparing the environment
 
@@ -14,13 +14,17 @@ Please note that the script utilizes the Spacy package so please have the 'en_co
 
 ### Input parameters
 
-1. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occuring entities throughout documents, please use "10" as the input parameter (e.g., "python app.py 10"). By default, the top 15 most frequently occurring entities will be compared across document pairs
+1. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occurring entities throughout documents, please use "10" as the input parameter (e.g., "python app.py 10"). By default, the top 15 most frequently occurring entities will be compared across document pairs
 2. "Bag of words" flag. Please enter a "1" as the second input parameter if you want to run a "bag of words" analysis in addition to a named-entity comparison with the document pairs. By default, this flag is turned off so only the "named entity" analysis will be conducted.
 
 ### Execute Command
 
-CD to the working directory and run the following command to exeucte the script: "python app.py <num_top_words> <bow_flag>". The script will execute and will extract the text from the files located in the "data" and "query" directories.
+CD to the working directory and run the following command to execute the script: "python app.py <num_top_words> <bow_flag>". The script will execute and will extract the text from the files located in the "data" and "query" directories.
 
 ### Output
 
-The script outputs a .CSV file that contains a breakdown of each document pair that was compared, the named entity similarity score, and the "bag of words" similary score. The file is saved to the 'out' directory in the project directory.
+The script outputs a CSV file that contains a breakdown of each document pair that was compared, the named entity similarity score, and the "bag of words" similarity score. The script saves the file to the 'out' directory in the project directory
+
+### Entities without word vectors
+
+If a named entity is extracted from a doc but does not have an associated word vector in the spaCy model, these entities will be removed from the analysis and documented in a .txt file located in the 'out/no_vector_entities" folder

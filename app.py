@@ -15,7 +15,6 @@ from text_preprocessing.preprocessing_funcs import tokenize_pdf_files, get_clean
 
 # Create spacy object
 nlp = spacy.load('en_core_web_lg')
-# nlp = spacy.load('en_core_web_sm')
 
 # Get the current date for the filename
 today = datetime.today()
