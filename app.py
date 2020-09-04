@@ -1,13 +1,11 @@
 import glob
 import os
 from datetime import datetime
-
 import numpy as np
 import pandas as pd
 import spacy
 import sys
 from platform import system
-
 from gensim_analysis.gensim_funcs import run_gensim_bow
 from text_preprocessing.named_entity_extract import get_entity_log_freqs, get_entity_similarities
 from text_preprocessing.preprocessing_funcs import get_clean_filename, read_file
@@ -62,6 +60,8 @@ if __name__ == '__main__':
     try:
         num_top_words = int(sys.argv[1])
     except ValueError as wrong_param_type:
+        num_top_words = 15
+    except IndexError as index_of_of_range:
         num_top_words = 15
 
     # Flag for executing gensim BoW comparison

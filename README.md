@@ -7,12 +7,10 @@ This Python script is intended to analyze one or more documents from a large cor
     $ conda create -n <virtual-env-name>
     $ conda activate <virtual-env-name>
 
-Install the required packages in from the'requirements.txt' file via pip: 
-
+Install the required packages in from the 'requirements.txt' file via pip:
     $ pip install  -r requirements.txt
 
 Please note that the script utilizes the Spacy package so please have the 'en_core_web_lg' spaCy model available
-
     $ python3 -m spacy download en_core_web_lg
 
 The algorithm uses word vectors so the 'large' model is required.
@@ -30,8 +28,8 @@ NOTE: All input parameters are optional and will use default values for the "top
 
 ### Execute Command
 
-CD to the working directory and run the following command to execute the script: 
-    
+CD to the working directory and run the following command to execute the script:
+
     python3 app.py <num_top_words> <bow_flag>
 
 The script will execute and will extract the text from the files located in the "data" and "query" directories.
