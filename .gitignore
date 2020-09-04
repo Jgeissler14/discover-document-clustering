@@ -1,3 +1,5 @@
 venv/
 .archive/
 Jupyter_notebook/
+/.idea/
+/out/
