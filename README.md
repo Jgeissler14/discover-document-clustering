@@ -43,3 +43,34 @@ The script outputs a CSV file that contains a breakdown of each document pair th
 ### Entities without word vectors
 
 If a named entity is extracted from a doc but does not have an associated word vector in the spaCy model, these entities will be removed from the analysis and documented in a .txt file located in the 'out/no_vector_entities" folder
+
+### Auto-docker 
+
+Auto-docker builds a container image and pushes the result to AWS ECR.
+
+From the command line, checkout the latest code for this project and use auto-docker project to automate
+the docker image build and deployment:
+
+Skip the following steps if already in the project directory
+```
+    cd ~/github      # Your local git project directory 
+    git clone https://github.com/DovelLabs/discover-document-clustering
+    
+    cd discover-document-clustering
+    # If building a container from a branch other than master
+    # git checkout autodocker   
+```
+
+Switch ot auto-docker project to build and deploy the container
+
+```
+    cd ~/github
+    git clone https://github.com/DovelLabs/auto-docker
+    cd auto-docker
+
+    # The false means do not push to AWS, leave it blank to push to AWS ECR
+    python main.py discover-document-clustering ../discover-document-clustering {version number|latest} {true|false} 
+    
+    # To run on your local docker, issue the following docker command
+    # docker run 461136979341.dkr.ecr.us-east-1.amazonaws.com/discover-document-clustering
+```
