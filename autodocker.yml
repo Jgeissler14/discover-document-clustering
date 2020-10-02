@@ -1,5 +1,5 @@
 container: python
-python_version: 3.7
+python_version: 3.8
 docker_name: Saeed Darya
 docker_email: saeed.darya@doveltech.com
 add_files:
