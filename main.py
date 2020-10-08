@@ -21,8 +21,8 @@ today_str = today.strftime("%m-%d-%Y-%H%M%S")
 
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
-INPUT_DIR = os.path.abspath('input')
-QUERY_DIR = os.path.abspath('query')
+INPUT_DIR = os.path.abspath('input/input')
+QUERY_DIR = os.path.abspath('input/query')
 
 supported_files = ["*.pdf", "*.txt"]
 # List to gather all filenames in the 'data' directory
