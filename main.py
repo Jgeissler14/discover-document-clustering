@@ -23,7 +23,7 @@ today_str = today.strftime("%m-%d-%Y-%H%M%S")
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
 INPUT_DIR = os.path.abspath('input')
-QUERY_DIR = os.path.abspath('query')
+# QUERY_DIR = os.path.abspath('query')
 
 supported_files = ["*.pdf", "*.txt"]
 # List to gather all filenames in the 'data' directory
@@ -31,24 +31,6 @@ all_files = list()
 query_files = list()
 similiarity_rating_avg_cumul = list()
 
-# Find all valid files in the 'data' directory and append to 'all_files' list
-print("get input files")
-for extension in supported_files:
-    for filename in glob.glob(os.path.join(INPUT_DIR, extension)):
-        print(filename)
-        all_files.append(filename)
-
-# Find all valid files in the 'query' directory and append to 'all_files_query' list
-print("get query files")
-for extension in supported_files:
-    for filename in glob.glob(os.path.join(QUERY_DIR, extension)):
-        print(filename)
-        query_files.append(filename)
-
-# Check both folders to make sure valid files are in the directories
-if len(all_files) == 0 or len(query_files) == 0:
-    print('No documents located in ''input'' and/or ''query'' folder. Please add files.')
-    exit()
 
 
 def main():
@@ -105,47 +87,48 @@ def main():
     results_dict = {}
 
     # Loop through both sets of files
-    for base_file in all_files:
+    # for base_file in all_files:
 
-        # doc_1_filename, doc_1_ext, doc_1, doc_1_cleaned = get_clean_filename(base_file)
-        doc_1_cleaned = os.path.basename(base_file)
+    print(f'input_file_param: {input_file_param}')
+    
+    pdf_entities_1 = read_file(nlp, input_file_param)
+    print(pdf_entities_1)
+    
+    # for query_file in query_files:
 
-        pdf_entities_1 = read_file(nlp, base_file)
-        for query_file in query_files:
-            # doc_2_filename, doc_2_ext, doc_2, doc_2_cleaned = get_clean_filename(query_file)
-            doc_2_cleaned = os.path.basename(query_file)
-            pdf_entities_2 = read_file(nlp, query_file)
+    pdf_entities_2 = read_file(nlp, query_file_param)
+    print(pdf_entities_2)
+   
+    # Get similarity ratings between the entities in the two docs
 
-            # Get similarity ratings between the entities in the two docs
+    sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words,
+                                                                                        pdf_entities_1,
+                                                                                        pdf_entities_2)
 
-            sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words,
-                                                                                               pdf_entities_1,
-                                                                                               pdf_entities_2)
+    # Get frequency metrics for entities
 
-            # Get frequency metrics for entities
+    log_freq_prod = get_entity_log_freqs(
+        nlp, num_top_words, pdf_entities_1, pdf_entities_2)
+    # print(f'log_freq_prod: {log_freq_prod} , {len(log_freq_prod)}')
 
-            log_freq_prod = get_entity_log_freqs(
-                nlp, num_top_words, pdf_entities_1, pdf_entities_2)
-            # print(f'log_freq_prod: {log_freq_prod} , {len(log_freq_prod)}')
+    # If all entities are duplicated between the two docs ...
+    if num_duplicate_entities + len(ents_with_no_vector) >= num_top_words:
+        print('ALL ENTITIES ARE DUPLICATES')
+        similarity_score = 100
+    else:
+        similarity_score = (np.mean(sim_ratings) * 50) + \
+            ((num_duplicate_entities / int(num_top_words)) * 50)
 
-            # If all entities are duplicated between the two docs ...
-            if num_duplicate_entities + len(ents_with_no_vector) >= num_top_words:
-                print('ALL ENTITIES ARE DUPLICATES')
-                similarity_score = 100
-            else:
-                similarity_score = (np.mean(sim_ratings) * 50) + \
-                    ((num_duplicate_entities / int(num_top_words)) * 50)
+    print('Similarity score: ', similarity_score)
 
-            print('Similarity score: ', similarity_score)
+    # Add similarity score to results list
+    similiarity_rating_avg_cumul.append(similarity_score)
 
-            # Add similarity score to results list
-            similiarity_rating_avg_cumul.append(similarity_score)
+    for ent in ents_with_no_vector:
+        all_ents_with_no_vector.append(ent.text)
 
-            for ent in ents_with_no_vector:
-                all_ents_with_no_vector.append(ent.text)
-
-            results_df = results_df.append(
-                {'file_1': doc_1_cleaned, 'file_2': doc_2_cleaned}, ignore_index=True)
+    results_df = results_df.append(
+        {'file_1': input_file_param, 'file_2': query_file_param}, ignore_index=True)
 
     # Finalize output file
     print('List of all similarity ratings ... ', similiarity_rating_avg_cumul)
