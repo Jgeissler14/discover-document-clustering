@@ -9,10 +9,11 @@ import pandas as pd
 import spacy
 
 from gensim_analysis.gensim_funcs import run_gensim_bow
-# Load spacy model
-from text_preprocessing.named_entity_extract import get_entity_similarities, get_entity_log_freqs
+from text_preprocessing.named_entity_extract import (get_entity_log_freqs,
+                                                     get_entity_similarities)
 from text_preprocessing.preprocessing_funcs import read_file
 
+# Load spacy model
 nlp = spacy.load('en_core_web_lg')
 
 # Get the current date for the filename
@@ -21,8 +22,8 @@ today_str = today.strftime("%m-%d-%Y-%H%M%S")
 
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
-INPUT_DIR = os.path.abspath('input/input')
-QUERY_DIR = os.path.abspath('input/query')
+INPUT_DIR = os.path.abspath('input')
+QUERY_DIR = os.path.abspath('query')
 
 supported_files = ["*.pdf", "*.txt"]
 # List to gather all filenames in the 'data' directory
@@ -33,16 +34,16 @@ similiarity_rating_avg_cumul = list()
 # Find all valid files in the 'data' directory and append to 'all_files' list
 print("get input files")
 for extension in supported_files:
-    for file in glob.glob(os.path.join(INPUT_DIR, extension)):
-        print(file)
-        all_files.append(file)
+    for filename in glob.glob(os.path.join(INPUT_DIR, extension)):
+        print(filename)
+        all_files.append(filename)
 
 # Find all valid files in the 'query' directory and append to 'all_files_query' list
 print("get query files")
 for extension in supported_files:
-    for file in glob.glob(os.path.join(QUERY_DIR, extension)):
-        print(file)
-        query_files.append(file)
+    for filename in glob.glob(os.path.join(QUERY_DIR, extension)):
+        print(filename)
+        query_files.append(filename)
 
 # Check both folders to make sure valid files are in the directories
 if len(all_files) == 0 or len(query_files) == 0:
@@ -62,14 +63,39 @@ def main():
     # Do not pass variables on the command line, read all the required parameters
     # from the ENV variables. Discover UI will collect the parameters needed and set them as ENV variables
     # at run time.
+    import sys
+    
+    try:
+        input_file_param, query_file_param = str(
+            sys.argv[1]), str(sys.argv[2])
+    except IndexError as missing_param:
+        input_file_param = str(os.getenv("AD_INPUT_FILE"))
+        query_file_param = str(os.getenv("AD_INPUT_QUERY"))
+        
+    # Gensim flag parameter
+    try:
+        gensim_flag = int(sys.argv[3])
+    except TypeError as gensim_flag_invalid:
+        print('Invalid value provided for gensim_flag parameter. Exiting.')
+        exit()
+    except IndexError as gensim_flag_missing:
+        gensim_flag = int(os.getenv("AD_GENSIM_FLAG", 0))
 
+    # Num_top_words parameter
+    try:
+        num_top_words = int(sys.argv[4])
+    except TypeError as top_words_invalid:
+        print('Invalid value provided for num_top_words parameter. Exiting.')
+        exit()
+    except IndexError as num_top_words_missing:
+        num_top_words = int(os.getenv("AD_TOPN_WORDS", 15))
+    
+    # num_top_words = int(os.getenv("AD_TOPN_WORDS", 15))
+    # print(f'Num Top Words={num_top_words}')
+    
+    
     # Example: Read a float value for threshold and default to 0.75 if missing
     # threshold = float(os.getenv("AD_THRESHOLD", 0.75))
-
-    num_top_words = int(os.getenv("AD_TOPN_WORDS", 15))
-    print(f'Num Top Words={num_top_words}')
-
-    gensim_flag = int(os.getenv("AD_GENSIM_FLAG", 0))
 
     # Discover UI uses 'results.json' file to display the output to use
     # For information on results.json format see: ???
@@ -98,7 +124,8 @@ def main():
 
             # Get frequency metrics for entities
 
-            log_freq_prod = get_entity_log_freqs(nlp, num_top_words, pdf_entities_1, pdf_entities_2)
+            log_freq_prod = get_entity_log_freqs(
+                nlp, num_top_words, pdf_entities_1, pdf_entities_2)
             # print(f'log_freq_prod: {log_freq_prod} , {len(log_freq_prod)}')
 
             # If all entities are duplicated between the two docs ...
@@ -106,7 +133,8 @@ def main():
                 print('ALL ENTITIES ARE DUPLICATES')
                 similarity_score = 100
             else:
-                similarity_score = (np.mean(sim_ratings) * 50) + ((num_duplicate_entities / int(num_top_words)) * 50)
+                similarity_score = (np.mean(sim_ratings) * 50) + \
+                    ((num_duplicate_entities / int(num_top_words)) * 50)
 
             print('Similarity score: ', similarity_score)
 
@@ -116,8 +144,8 @@ def main():
             for ent in ents_with_no_vector:
                 all_ents_with_no_vector.append(ent.text)
 
-            results_df = results_df.append({'file_1': doc_1_cleaned, 'file_2': doc_2_cleaned}
-                                           , ignore_index=True)
+            results_df = results_df.append(
+                {'file_1': doc_1_cleaned, 'file_2': doc_2_cleaned}, ignore_index=True)
 
     # Finalize output file
     print('List of all similarity ratings ... ', similiarity_rating_avg_cumul)
