@@ -32,7 +32,6 @@ query_files = list()
 similiarity_rating_avg_cumul = list()
 
 
-
 def main():
     # This script will be executed in a container in a batch environment.
 
@@ -46,14 +45,14 @@ def main():
     # from the ENV variables. Discover UI will collect the parameters needed and set them as ENV variables
     # at run time.
     import sys
-    
+
     try:
         input_file_param, query_file_param = str(
             sys.argv[1]), str(sys.argv[2])
     except IndexError as missing_param:
         input_file_param = str(os.getenv("AD_INPUT_FILE"))
         query_file_param = str(os.getenv("AD_INPUT_QUERY"))
-        
+
     # Gensim flag parameter
     try:
         gensim_flag = int(sys.argv[3])
@@ -71,13 +70,6 @@ def main():
         exit()
     except IndexError as num_top_words_missing:
         num_top_words = int(os.getenv("AD_TOPN_WORDS", 15))
-    
-    # num_top_words = int(os.getenv("AD_TOPN_WORDS", 15))
-    # print(f'Num Top Words={num_top_words}')
-    
-    
-    # Example: Read a float value for threshold and default to 0.75 if missing
-    # threshold = float(os.getenv("AD_THRESHOLD", 0.75))
 
     # Discover UI uses 'results.json' file to display the output to use
     # For information on results.json format see: ???
@@ -90,20 +82,20 @@ def main():
     # for base_file in all_files:
 
     print(f'input_file_param: {input_file_param}')
-    
+
     pdf_entities_1 = read_file(nlp, input_file_param)
     print(pdf_entities_1)
-    
+
     # for query_file in query_files:
 
     pdf_entities_2 = read_file(nlp, query_file_param)
     print(pdf_entities_2)
-   
+
     # Get similarity ratings between the entities in the two docs
 
     sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words,
-                                                                                        pdf_entities_1,
-                                                                                        pdf_entities_2)
+                                                                                       pdf_entities_1,
+                                                                                       pdf_entities_2)
 
     # Get frequency metrics for entities
 
@@ -124,9 +116,11 @@ def main():
     # Add similarity score to results list
     similiarity_rating_avg_cumul.append(similarity_score)
 
+    # Add entities without a vector to a list
     for ent in ents_with_no_vector:
         all_ents_with_no_vector.append(ent.text)
 
+    # Create results_df file
     results_df = results_df.append(
         {'file_1': input_file_param, 'file_2': query_file_param}, ignore_index=True)
 
@@ -157,7 +151,7 @@ def main():
     # ############# Gensim BoW analysis ##############
     # Run Gensim BoW script if flag is enabled
     if gensim_flag == 1:
-        similarity_scores = run_gensim_bow()
+        similarity_scores = run_gensim_bow(input_file_param, query_file_param)
         print(similarity_scores, len(similarity_scores))
 
         # Create column in df with similarity scores
