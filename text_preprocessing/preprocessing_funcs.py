@@ -15,7 +15,7 @@ INPUT_DIR = os.path.abspath('input')
 file_docs = []
 
 
-# Read in PDF file and return list of unprocessed docs (sentences) from the file
+# Helper function to process (tokenize and turn into a string) .pdf files
 def tokenize_pdf_files(pdf_filename):
     raw_text = textract.process(
         INPUT_DIR + os.sep + pdf_filename, encoding='utf-8')
@@ -24,14 +24,21 @@ def tokenize_pdf_files(pdf_filename):
 
     return pdf_token, str_raw_text
 
-
+# Helper function to process (tokenize and turn into a string) .txt files
 def tokenize_txt_files(txt_filename):
     file_docs = list()
+    # Get raw string of the .txt file
+    with open(INPUT_DIR + os.sep + txt_filename) as f:
+        raw_text = f.read()
+        f.close()
+    # Tokenize the sentences in the .txt file and save to list object
     with open(INPUT_DIR + os.sep + txt_filename) as f:
         tokens = sent_tokenize(f.read())
         for line in tokens:
             file_docs.append(line)
-    return file_docs
+        f.close()
+
+    return file_docs, raw_text
 
 
 def read_file(nlp, filename):
@@ -42,17 +49,18 @@ def read_file(nlp, filename):
 
     # If .txt file:
     if doc_ext == '.txt':
-        file_docs = tokenize_txt_files(filename)
+        file_docs, raw_text_string = tokenize_txt_files(filename)
+        named_entities = get_named_entity_counts(nlp, raw_text_string)
 
     # If .pdf file:
     elif doc_ext == '.pdf':
-        file2_docs, pdf_str = tokenize_pdf_files(filename)
-        pdf_entities = get_named_entity_counts(nlp, pdf_str)
-    
+        file2_docs, raw_text_string = tokenize_pdf_files(filename)
+        named_entities = get_named_entity_counts(nlp, raw_text_string)
+
     # If other type of file ...
     else:
         raise TypeError(
             'A non-txt and pdf file detected. Please use only .txt or .pdf files')
         exit()
 
-    return pdf_entities
+    return named_entities

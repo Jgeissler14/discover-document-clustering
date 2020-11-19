@@ -36,17 +36,21 @@ CD to the working directory and run the following command to execute the script:
 
 python app.py <filename_1> <filename_2> <num_top_words> <bow_flag>
 
-The script will execute and will extract the text from the files located in the "data" and "query" directories.
+The script will execute and will extract the text from the files located in the "input" directory as specified by the input parameters.
 
 ### Output
 
-The script outputs a CSV file that contains a breakdown of each document pair that was compared, the named entity similarity score, and the "bag of words" similarity score. The script saves the file to the 'out' directory in the project directory
+The script outputs a CSV file that contains a breakdown of each document pair that was compared, the named entity similarity score, and the "bag of words" similarity score (if applicable). The script saves the file to the 'output' directory in the project directory.
+The meaning of the columns in the output file:
+
+- entity_sim_rating: between 0 (not similar at all) and 100 (identical)
+- bow_comparison_score: between 0 (not similar at all) and 10 (very similar)
 
 ### Entities without word vectors
 
-If a named entity is extracted from a doc but does not have an associated word vector in the spaCy model, these entities will be removed from the analysis and documented in a .txt file located in the 'out/no_vector_entities" folder
+If a named entity is extracted from a doc but does not have an associated word vector in the spaCy model, these entities will be removed from the analysis and documented in a .txt file located in the 'output" folder
 
-### Auto-docker 
+### Auto-docker
 
 Auto-docker builds a container image and pushes the result to AWS ECR.
 

@@ -6,15 +6,16 @@ import numpy as np
 from gensim.test.utils import get_tmpfile
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from text_preprocessing.preprocessing_funcs import tokenize_pdf_files, tokenize_txt_files
+
 
 # Directory variables (root dir, data dir, etc.)
-from text_preprocessing.preprocessing_funcs import tokenize_pdf_files
-
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
 INPUT_DIR = os.path.abspath('input')
 QUERY_DIR = os.path.abspath('query')
 
+# List of supported file extensions
 supported_files = ["*.pdf", "*.txt"]
 
 # List to gather all filenames in the 'data' directory
@@ -32,20 +33,9 @@ for extension in supported_files:
     for file in glob.glob(os.path.join(QUERY_DIR, extension)):
         query_files.append(file)
 
-
 def run_gensim_bow(doc_1, doc_2):
     gensim_all_files = list()
     gensim_query_files = list()
-
-    # Find all valid files in the 'data' directory and append to 'all_files' list
-    # for extension in supported_files:
-    #     for file in glob.glob(os.path.join(INPUT_DIR, extension)):
-    #         gensim_all_files.append(file)
-
-    # Find all valid files in the 'query' directory and append to 'all_files_query' list
-    # for extension in supported_files:
-    #     for file in glob.glob(os.path.join(QUERY_DIR, extension)):
-    #         gensim_query_files.append(file)
 
     # Lemmatizer object to remove stems from words
     wordnet_lemmatizer = WordNetLemmatizer()
@@ -55,16 +45,18 @@ def run_gensim_bow(doc_1, doc_2):
     doc_2_gensim = list()
     gensim_similarities = list()
 
-    # for doc_1 in all_files:
-
-    # doc_ext = os.path.splitext(filename)[1]
-
-    # doc_1_cleaned = os.path.basename(doc_1)
-    # doc_1_gensim.append(doc_1_cleaned)
+    # Determine the file extensions of the two files
+    doc_1_ext = os.path.splitext(doc_1)[1]
+    doc_2_ext = os.path.splitext(doc_2)[1]
 
     ######### DOC_1 START #########
-
-    gensim_file_docs, pdf_str_1 = tokenize_pdf_files(doc_1)
+    print('Entering Gensim BOW analysis ...')
+    
+    # Process in the input file
+    if doc_1_ext == '.pdf':
+        gensim_file_docs, raw_string = tokenize_pdf_files(doc_1)
+    elif doc_1_ext == '.txt':
+        gensim_file_docs, raw_string = tokenize_txt_files(doc_1)
 
     # Tokenize (and process) words for each sentence
     # Also lemmatize each word within the documents
@@ -106,7 +98,11 @@ def run_gensim_bow(doc_1, doc_2):
 
     # for doc_2 in gensim_query_files:
 
-    gensim_file2_docs, pdf_str_2 = tokenize_pdf_files(doc_2)
+    # Process in the input file
+    if doc_2_ext == '.pdf':
+        gensim_file2_docs, pdf_str_2 = tokenize_pdf_files(doc_2)
+    elif doc_2_ext == '.txt':
+        gensim_file2_docs, pdf_str_2 = tokenize_txt_files(doc_2)
 
     # Array of averages (len = number of docs in the query)
     # Each entry in the list is the average similarity of the docs in the query doc compared to the corpus

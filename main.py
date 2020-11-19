@@ -72,7 +72,6 @@ def main():
         num_top_words = int(os.getenv("AD_TOPN_WORDS", 15))
 
     # Discover UI uses 'results.json' file to display the output to use
-    # For information on results.json format see: ???
     output_results = {"data": [], "data_type": "generated"}
 
     # Results object
@@ -92,7 +91,6 @@ def main():
     print(pdf_entities_2)
 
     # Get similarity ratings between the entities in the two docs
-
     sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words,
                                                                                        pdf_entities_1,
                                                                                        pdf_entities_2)
@@ -152,16 +150,18 @@ def main():
     # Run Gensim BoW script if flag is enabled
     if gensim_flag == 1:
         similarity_scores = run_gensim_bow(input_file_param, query_file_param)
-        print(similarity_scores, len(similarity_scores))
+        print(f'Gensim similarity score: {similarity_scores}')
 
         # Create column in df with similarity scores
-        results_df['BOW_Comparison_score'] = similarity_scores
+        results_df['bow_comparison_score'] = similarity_scores
     else:
         pass
 
     # ############# End Gensim BoW analysis (end) ##############
 
     # Export dataframe to CSV file
+    results_df = results_df.set_index('file_1')
+
     print(f'Saving results to {OUTPUT_DIR} directory ...')
     output_filename = f'result_{today_str}.csv'
     results_df.to_csv(os.path.join(OUTPUT_DIR, output_filename))
