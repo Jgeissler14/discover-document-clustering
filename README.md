@@ -19,32 +19,38 @@ The algorithm uses word vectors so the 'large' model is required.
 
 ### Assumptions for Input Files
 
-1. The files are located in one of two directories in the root project directory: "data" and "query".
-2. The files in the directories are either .txt or .pdf files
+1. The files are located in the 'input' directory in the root project directory.
+2. The files in the directory are either .txt or .pdf files.
+3. The filenames of the files do not contain any spaces.
 
 ### Input parameters
 
-1. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occurring entities throughout documents, please use "10" as the input parameter (e.g., "python app.py 10"). By default, the top 15 most frequently occurring entities will be compared across document pairs
-2. "Bag of words" flag. Please enter a "1" as the second input parameter if you want to run a "bag of words" analysis in addition to a named-entity comparison with the document pairs. By default, this flag is turned off so only the "named entity" analysis will be conducted.
-NOTE: All input parameters are optional and will use default values for the "top-K" named entities (15) and whether to include the "BoW" analysis with the script execution (0-off).
+1. The filename (with file extension) of the input document.
+2. The filename (with file extension) of the "query" document.
+3. "Bag of words" flag. Please enter a "1" as the second input parameter if you want to run a "bag of words" analysis in addition to a named-entity comparison with the document pairs.
+4. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occurring entities throughout documents, please use "10" as the input parameter.
 
 ### Execute Command
 
 CD to the working directory and run the following command to execute the script:
 
-    python app.py <num_top_words> <bow_flag>
+python app.py <filename_1> <filename_2> <num_top_words> <bow_flag>
 
-The script will execute and will extract the text from the files located in the "data" and "query" directories.
+The script will execute and will extract the text from the files located in the "input" directory as specified by the input parameters.
 
 ### Output
 
-The script outputs a CSV file that contains a breakdown of each document pair that was compared, the named entity similarity score, and the "bag of words" similarity score. The script saves the file to the 'out' directory in the project directory
+The script outputs a CSV file that contains a breakdown of each document pair that was compared, the named entity similarity score, and the "bag of words" similarity score (if applicable). The script saves the file to the 'output' directory in the project directory.
+The meaning of the columns in the output file:
+
+- entity_sim_rating: between 0 (not similar at all) and 100 (identical)
+- bow_comparison_score: between 0 (not similar at all) and 10 (very similar)
 
 ### Entities without word vectors
 
-If a named entity is extracted from a doc but does not have an associated word vector in the spaCy model, these entities will be removed from the analysis and documented in a .txt file located in the 'out/no_vector_entities" folder
+If a named entity is extracted from a doc but does not have an associated word vector in the spaCy model, these entities will be removed from the analysis and documented in a .txt file located in the 'output" folder
 
-### Auto-docker 
+### Auto-docker
 
 Auto-docker builds a container image and pushes the result to AWS ECR.
 

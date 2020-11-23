@@ -6,15 +6,16 @@ import numpy as np
 from gensim.test.utils import get_tmpfile
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from text_preprocessing.preprocessing_funcs import tokenize_pdf_files, tokenize_txt_files
+
 
 # Directory variables (root dir, data dir, etc.)
-from text_preprocessing.preprocessing_funcs import tokenize_pdf_files
-
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
 INPUT_DIR = os.path.abspath('input')
 QUERY_DIR = os.path.abspath('query')
 
+# List of supported file extensions
 supported_files = ["*.pdf", "*.txt"]
 
 # List to gather all filenames in the 'data' directory
@@ -32,20 +33,9 @@ for extension in supported_files:
     for file in glob.glob(os.path.join(QUERY_DIR, extension)):
         query_files.append(file)
 
-
-def run_gensim_bow():
+def run_gensim_bow(doc_1, doc_2):
     gensim_all_files = list()
     gensim_query_files = list()
-
-    # Find all valid files in the 'data' directory and append to 'all_files' list
-    for extension in supported_files:
-        for file in glob.glob(os.path.join(INPUT_DIR, extension)):
-            gensim_all_files.append(file)
-
-    # Find all valid files in the 'query' directory and append to 'all_files_query' list
-    for extension in supported_files:
-        for file in glob.glob(os.path.join(QUERY_DIR, extension)):
-            gensim_query_files.append(file)
 
     # Lemmatizer object to remove stems from words
     wordnet_lemmatizer = WordNetLemmatizer()
@@ -55,100 +45,107 @@ def run_gensim_bow():
     doc_2_gensim = list()
     gensim_similarities = list()
 
-    for doc_1 in all_files:
-        # doc_1_filename, doc_1_ext, doc_1, doc_1_cleaned = get_clean_filename(doc_1)
-        doc_1_cleaned = os.path.basename(doc_1)
-        doc_1_gensim.append(doc_1_cleaned)
-        gensim_file_docs, pdf_str_1 = tokenize_pdf_files(doc_1)
+    # Determine the file extensions of the two files
+    doc_1_ext = os.path.splitext(doc_1)[1]
+    doc_2_ext = os.path.splitext(doc_2)[1]
 
-        # Tokenize (and process) words for each sentence
-        # Also lemmatize each word within the documents
-        gen_docs = [[wordnet_lemmatizer.lemmatize(w) for w in gensim.utils.simple_preprocess(text, min_len=3)
-                     if w not in stop_words] for text in gensim_file_docs]
+    ######### DOC_1 START #########
+    print('Entering Gensim BOW analysis ...')
+    
+    # Process in the input file
+    if doc_1_ext == '.pdf':
+        gensim_file_docs, raw_string = tokenize_pdf_files(doc_1)
+    elif doc_1_ext == '.txt':
+        gensim_file_docs, raw_string = tokenize_txt_files(doc_1)
 
-        ### First file
+    # Tokenize (and process) words for each sentence
+    # Also lemmatize each word within the documents
+    gen_docs = [[wordnet_lemmatizer.lemmatize(w) for w in gensim.utils.simple_preprocess(text, min_len=3)
+                 if w not in stop_words] for text in gensim_file_docs]
 
-        # Remove 'blank' entries from the doc list
-        for docs in gen_docs:
-            # print(docs, int(len(docs)))
-            if int(len(docs)) < 2:
-                gen_docs.remove(docs)
+    # First file
 
-        # Create gensim dictionary with ID as the key, and word token as the value
-        dictionary = gensim.corpora.Dictionary(gen_docs)
-        # print(dictionary.token2id)
+    # Remove 'blank' entries from the doc list
+    for docs in gen_docs:
+        # print(docs, int(len(docs)))
+        if int(len(docs)) < 2:
+            gen_docs.remove(docs)
 
-        ### Create a bag of words corpus, passing the tokenized list of words to the Dictionary.doc2bow()
-        corpus = [dictionary.doc2bow(gen_doc) for gen_doc in gen_docs]
+    # Create gensim dictionary with ID as the key, and word token as the value
+    dictionary = gensim.corpora.Dictionary(gen_docs)
+    # print(dictionary.token2id)
 
-        # TFIDF - down weights tokens (words) that appears frequently across documents
-        # Words that occur more frequently across the documents get smaller weights
-        tf_idf = gensim.models.TfidfModel(corpus)
+    # Create a bag of words corpus, passing the tokenized list of words to the Dictionary.doc2bow()
+    corpus = [dictionary.doc2bow(gen_doc) for gen_doc in gen_docs]
 
-        # Print token_id and the token frequency
-        # for doc in tf_idf[corpus]:
-        #     print([[dictionary[id], np.around(freq, decimals=2)] for id, freq in doc])
+    # TFIDF - down weights tokens (words) that appears frequently across documents
+    # Words that occur more frequently across the documents get smaller weights
+    tf_idf = gensim.models.TfidfModel(corpus)
 
-        # Create index tempfile
-        index_tmpfile = get_tmpfile("wordindex")
+    # Create index tempfile
+    index_tmpfile = get_tmpfile("wordindex")
 
-        # Create similarity measure object
-        sims = gensim.similarities.Similarity(index_tmpfile, tf_idf[corpus],
-                                              num_features=len(dictionary))
+    # Create similarity measure object
+    sims = gensim.similarities.Similarity(index_tmpfile, tf_idf[corpus],
+                                          num_features=len(dictionary))
 
-        # Create Query Document - how similar is this query document to each document in the index
-        gensim_file2_docs = []
+    # Create Query Document - how similar is this query document to each document in the index
+    gensim_file2_docs = []
 
-        for doc_2 in gensim_query_files:
-            # doc_2_filename, doc_2_ext, doc_2, doc_2_cleaned = get_clean_filename(doc_2)
-            doc_2_cleaned = os.path.basename(doc_2)
-            doc_2_gensim.append(doc_2_cleaned)
-            gensim_file2_docs, pdf_str_2 = tokenize_pdf_files(doc_2)
+    ######### DOC_1 END #########
 
-            ### Second file
+    ######### DOC_2 START #########
 
-            # Array of averages (len = number of docs in the query)
-            # Each entry in the list is the average similarity of the docs in the query doc compared to the corpus
-            avg_sims = []
+    # for doc_2 in gensim_query_files:
 
-            for line in gensim_file2_docs:
-                # tokenize & process words
-                query_doc = gensim.utils.simple_preprocess(line, min_len=3)
-                query_doc = [wordnet_lemmatizer.lemmatize(words) for words in query_doc if words not in stop_words]
+    # Process in the input file
+    if doc_2_ext == '.pdf':
+        gensim_file2_docs, pdf_str_2 = tokenize_pdf_files(doc_2)
+    elif doc_2_ext == '.txt':
+        gensim_file2_docs, pdf_str_2 = tokenize_txt_files(doc_2)
 
-                # If a blank row, skip to the next row
-                # print(query_doc, int(len(query_doc)))
-                if int(len(query_doc)) < 1:
-                    continue
+    # Array of averages (len = number of docs in the query)
+    # Each entry in the list is the average similarity of the docs in the query doc compared to the corpus
+    avg_sims = []
 
-                # create bag of words
-                query_doc_bow = dictionary.doc2bow(query_doc)
-                # find similarity for each document
-                query_doc_tf_idf = tf_idf[query_doc_bow]
-                # print (document_number, document_similarity)
-                # print('Comparing Result:', sims[query_doc_tf_idf])
-                # calculate sum of similarities for each query doc
-                sum_of_sims = (np.sum(sims[query_doc_tf_idf], dtype=np.float32))
-                # calculate average of similarity for each query doc
-                avg = sum_of_sims / len(gensim_file_docs)
-                # print average of similarity for each query doc
-                # print(f'avg: {sum_of_sims / len(file_docs)}')
-                # add average values into array
-                avg_sims.append(avg)
+    for line in gensim_file2_docs:
+        # tokenize & process words
+        query_doc = gensim.utils.simple_preprocess(line, min_len=3)
+        query_doc = [wordnet_lemmatizer.lemmatize(
+            words) for words in query_doc if words not in stop_words]
 
-            # print('AVERAGE SIMS: ' , avg_sims)
+        # If a blank row, skip to the next row
+        if int(len(query_doc)) < 1:
+            continue
 
-            # calculate total average
-            total_avg = ((np.sum(avg_sims, dtype=np.float)) / len(gensim_file2_docs))
+        # create bag of words
+        query_doc_bow = dictionary.doc2bow(query_doc)
+        # find similarity for each document
+        query_doc_tf_idf = tf_idf[query_doc_bow]
+        # print (document_number, document_similarity)
+        # print('Comparing Result:', sims[query_doc_tf_idf])
+        # calculate sum of similarities for each query doc
+        sum_of_sims = (np.sum(sims[query_doc_tf_idf], dtype=np.float32))
+        # calculate average of similarity for each query doc
+        avg = sum_of_sims / len(gensim_file_docs)
+        # add average values into array
+        avg_sims.append(avg)
 
-            # round the value and multiply by 100 to format it as percentage
-            percentage_of_similarity = round(float(total_avg) * 100)
-            # print('Similarity percentage: ' , percentage_of_similarity)
+    ######### DOC_2 END #########
 
-            # if percentage is greater than 100
-            if percentage_of_similarity >= 100:
-                percentage_of_similarity = 100
+    # print('AVERAGE SIMS: ' , avg_sims)
 
-            gensim_similarities.append(percentage_of_similarity)
+    # calculate total average
+    total_avg = ((np.sum(avg_sims, dtype=np.float)) / len(gensim_file2_docs))
+
+    # round the value and multiply by 100 to format it as percentage
+    percentage_of_similarity = round(float(total_avg) * 100)
+    # print('Similarity percentage: ' , percentage_of_similarity)
+
+    # if percentage is greater than 100
+    if percentage_of_similarity >= 100:
+        percentage_of_similarity = 100
+
+    gensim_similarities.append(percentage_of_similarity)
 
     return gensim_similarities
