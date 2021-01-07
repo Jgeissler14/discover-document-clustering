@@ -14,7 +14,7 @@ gensim==3.8.3
 idna==2.10
 IMAPClient==2.1.0
 joblib==0.14.1
-lxml==4.5.2
+lxml==4.6.2
 murmurhash==1.0.2
 nltk==3.5
 numpy==1.19.2
