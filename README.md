@@ -25,16 +25,14 @@ The algorithm uses word vectors so the 'large' model is required.
 
 ### Input parameters
 
-1. The filename (with file extension) of the input document.
-2. The filename (with file extension) of the "query" document.
-3. "Bag of words" flag. Please enter a "1" as the second input parameter if you want to run a "bag of words" analysis in addition to a named-entity comparison with the document pairs.
-4. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occurring entities throughout documents, please use "10" as the input parameter.
+1. "Bag of words" flag. Please enter a "1" as the second input parameter if you want to run a "bag of words" analysis in addition to a named-entity comparison with the document pairs.
+2. The number of entities that you would like to be compared across documents. For example, if you would like to analyze the top 10 most commonly occurring entities throughout documents, please use "10" as the input parameter.
 
 ### Execute Command
 
 CD to the working directory and run the following command to execute the script:
 
-python app.py <filename_1> <filename_2> <num_top_words> <bow_flag>
+python app.py <num_top_words> <bow_flag>
 
 The script will execute and will extract the text from the files located in the "input" directory as specified by the input parameters.
 

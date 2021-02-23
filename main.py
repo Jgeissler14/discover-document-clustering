@@ -1,4 +1,5 @@
 import glob
+import itertools
 import json
 import os
 import traceback
@@ -18,44 +19,28 @@ nlp = spacy.load('en_core_web_lg')
 
 # Get the current date for the filename
 today = datetime.today()
-today_str = today.strftime("%m-%d-%Y-%H%M%S")
+today_str = today.strftime("%Y-%m-%d-%H%M%S")
 
+# Create DIR variables
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
 INPUT_DIR = os.path.abspath('input')
-# QUERY_DIR = os.path.abspath('query')
 
+# List of supported filetypes
 supported_files = ["*.pdf", "*.txt"]
-# List to gather all filenames in the 'data' directory
-all_files = list()
-query_files = list()
-similiarity_rating_avg_cumul = list()
 
 
 def main():
     # This script will be executed in a container in a batch environment.
 
-    # Initialize df to store comparison results
-    results_df = pd.DataFrame(columns=['file_1', 'file_2'])
-
-    all_ents_with_no_vector = list()
-
     # ######### Parameters ##########
     # Do not pass variables on the command line, read all the required parameters
-    # from the ENV variables. Discover UI will collect the parameters needed and set them as ENV variables
-    # at run time.
+    # from the ENV variables. Discover UI will collect the parameters needed and set them as ENV variables at run time.
     import sys
-
-    try:
-        input_file_param, query_file_param = str(
-            sys.argv[1]), str(sys.argv[2])
-    except IndexError as missing_param:
-        input_file_param = str(os.getenv("AD_INPUT_FILE"))
-        query_file_param = str(os.getenv("AD_INPUT_QUERY"))
 
     # Gensim flag parameter
     try:
-        gensim_flag = int(sys.argv[3])
+        gensim_flag = int(sys.argv[1])
     except TypeError as gensim_flag_invalid:
         print('Invalid value provided for gensim_flag parameter. Exiting.')
         exit()
@@ -64,7 +49,7 @@ def main():
 
     # Num_top_words parameter
     try:
-        num_top_words = int(sys.argv[4])
+        num_top_words = int(sys.argv[2])
     except TypeError as top_words_invalid:
         print('Invalid value provided for num_top_words parameter. Exiting.')
         exit()
@@ -74,53 +59,62 @@ def main():
     # Discover UI uses 'results.json' file to display the output to use
     output_results = {"data": [], "data_type": "generated"}
 
-    # Results object
-    results_dict = {}
+    # Initialize df to store comparison results
+    results_df = pd.DataFrame(columns=['file_1', 'file_2'])
 
-    # Loop through both sets of files
-    # for base_file in all_files:
+    # Initialize empty lists to store results
+    all_ents_with_no_vector = list()
+    similiarity_rating_avg_cumul = list()
+    all_files_list = list()
 
-    print(f'input_file_param: {input_file_param}')
+    # Find all valid files in the 'input' directory and append to 'all_files_list' list
+    for extension in supported_files:
+        for idx, filepath in enumerate(glob.glob(os.path.join(INPUT_DIR, extension))):
+            all_files_list.append(os.path.basename(filepath))
 
-    pdf_entities_1 = read_file(nlp, input_file_param)
-    print(pdf_entities_1)
+    # Create list of all document pairs (without replacement)
+    res = [(file1, file2)
+           for file1, file2 in itertools.combinations(all_files_list, 2)]
 
-    # for query_file in query_files:
+    # Loop through the list of filename pairs
+    for x in res:
 
-    pdf_entities_2 = read_file(nlp, query_file_param)
-    print(pdf_entities_2)
+        # Analyze the first file
+        pdf_entities_1 = read_file(nlp, x[0])
 
-    # Get similarity ratings between the entities in the two docs
-    sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words,
-                                                                                       pdf_entities_1,
-                                                                                       pdf_entities_2)
+        # Analyze the second file
+        pdf_entities_2 = read_file(nlp, x[1])
 
-    # Get frequency metrics for entities
+        # Get similarity ratings between the entities in the two docs
+        sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words,
+                                                                                           pdf_entities_1,
+                                                                                           pdf_entities_2)
 
-    log_freq_prod = get_entity_log_freqs(
-        nlp, num_top_words, pdf_entities_1, pdf_entities_2)
-    # print(f'log_freq_prod: {log_freq_prod} , {len(log_freq_prod)}')
+        # Get frequency metrics for entities
+        log_freq_prod = get_entity_log_freqs(
+            nlp, num_top_words, pdf_entities_1, pdf_entities_2)
+        # print(f'log_freq_prod: {log_freq_prod} , {len(log_freq_prod)}')
 
-    # If all entities are duplicated between the two docs ...
-    if num_duplicate_entities + len(ents_with_no_vector) >= num_top_words:
-        print('ALL ENTITIES ARE DUPLICATES')
-        similarity_score = 100
-    else:
-        similarity_score = (np.mean(sim_ratings) * 50) + \
-            ((num_duplicate_entities / int(num_top_words)) * 50)
+        # If all entities are duplicated between the two docs ...
+        if num_duplicate_entities + len(ents_with_no_vector) >= num_top_words:
+            print('ALL ENTITIES ARE DUPLICATES')
+            similarity_score = 100
+        else:
+            similarity_score = np.round((np.mean(sim_ratings) * 50) +
+                                        ((num_duplicate_entities / int(num_top_words)) * 50), 2)
 
-    print('Similarity score: ', similarity_score)
+        print('Similarity score: ', similarity_score)
 
-    # Add similarity score to results list
-    similiarity_rating_avg_cumul.append(similarity_score)
+        # Add similarity score to results list
+        similiarity_rating_avg_cumul.append(similarity_score)
 
-    # Add entities without a vector to a list
-    for ent in ents_with_no_vector:
-        all_ents_with_no_vector.append(ent.text)
+        # Add entities without a vector to a list
+        for ent in ents_with_no_vector:
+            all_ents_with_no_vector.append(ent.text)
 
-    # Create results_df file
-    results_df = results_df.append(
-        {'file_1': input_file_param, 'file_2': query_file_param}, ignore_index=True)
+        # Create results_df file
+        results_df = results_df.append(
+            {'file_1': x[0], 'file_2': x[1]}, ignore_index=True)
 
     # Finalize output file
     print('List of all similarity ratings ... ', similiarity_rating_avg_cumul)
@@ -130,10 +124,6 @@ def main():
 
     # Sort results DF by the similarity rating (descending)
     results_df.sort_values('entity_sim_rating', inplace=True, ascending=False)
-
-    # Customize pandas output to ensure no text is cut off
-    pd.set_option("display.max_rows", None, "display.max_columns", 5, 'display.expand_frame_repr', False,
-                  'display.max_colwidth', None)
 
     # Create set of entities without word vectors
     ent_set = set(all_ents_with_no_vector)
@@ -149,18 +139,18 @@ def main():
     # ############# Gensim BoW analysis ##############
     # Run Gensim BoW script if flag is enabled
     if gensim_flag == 1:
-        similarity_scores = run_gensim_bow(input_file_param, query_file_param)
-        print(f'Gensim similarity score: {similarity_scores}')
+
+        # Generate gensim BOW scores for each pair
+        gensim_sim_scores_list = [run_gensim_bow(x[0], x[1]) for x in res]
+
+        # Flatten the list of gensim scores
+        gensim_sim_scores_list_flat = list(
+            itertools.chain(*gensim_sim_scores_list))
 
         # Create column in df with similarity scores
-        results_df['bow_comparison_score'] = similarity_scores
-    else:
-        pass
+        results_df['bow_comparison_score'] = gensim_sim_scores_list_flat
 
     # ############# End Gensim BoW analysis (end) ##############
-
-    # Export dataframe to CSV file
-    results_df = results_df.set_index('file_1')
 
     print(f'Saving results to {OUTPUT_DIR} directory ...')
     output_filename = f'result_{today_str}.csv'
@@ -188,6 +178,7 @@ if __name__ == '__main__':
         main()
     except Exception as e:
         tb = traceback.format_exc()
+        print(str(tb))
         with open(os.path.join(OUTPUT_DIR, "results.json"), "w+") as f:
             print("Writing errors in results.json file")
             json.dump({

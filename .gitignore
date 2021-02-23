@@ -5,4 +5,7 @@ Jupyter_notebook/
 /out/
 /out/no_vector_entitites/
 archive/
-_pycache
+__pycache__
+.vscode/
+.idea/
+.vscode

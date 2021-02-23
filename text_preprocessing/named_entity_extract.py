@@ -93,8 +93,8 @@ def get_entity_similarities(nlp, top_k_words, pdf_entities_1, pdf_entities_2):
 
     num_duplicate_entities = len(duplicated_ents)
 
-    print('no_vector_ents ... ', no_vector_ents)
-    print('duplicated_ents ... ', duplicated_ents, len(duplicated_ents))
+    # print('no_vector_ents ... ', no_vector_ents)
+    # print('duplicated_ents ... ', duplicated_ents, len(duplicated_ents))
 
     # Loop through both lists to get similarity ratings between the two lists of entities
     for f in ents_1:

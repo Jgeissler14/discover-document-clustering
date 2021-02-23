@@ -1,6 +1,6 @@
 import os
 
-import textract
+import tika
 from nltk.tokenize import sent_tokenize
 
 from text_preprocessing.named_entity_extract import get_named_entity_counts
@@ -9,20 +9,40 @@ from text_preprocessing.named_entity_extract import get_named_entity_counts
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
 INPUT_DIR = os.path.abspath('input')
-# QUERY_DIR = os.path.abspath('../query')
 
 # Create list to store docs from the data file
 file_docs = []
 
 
+def get_text_from_pdf(filename):
+    """Function to extract the text from a PDF file using the Tika package.
+    Args:
+        filename (str): filename of the pdf
+    Returns:
+        str: raw text string of the data contained in the PDF file.
+    """
+
+    # Initialize the tika VM
+    tika.initVM()
+
+    # Import the parser
+    from tika import parser
+
+    # Extract the text
+    text = parser.from_file(filename)
+
+    # Return the content
+
+    return text['content']
+
+
 # Helper function to process (tokenize and turn into a string) .pdf files
 def tokenize_pdf_files(pdf_filename):
-    raw_text = textract.process(
-        INPUT_DIR + os.sep + pdf_filename, encoding='utf-8')
-    str_raw_text = raw_text.decode('utf-8')
-    pdf_token = sent_tokenize(str_raw_text)
 
-    return pdf_token, str_raw_text
+    raw_text = get_text_from_pdf(INPUT_DIR + os.sep + pdf_filename)
+    pdf_token = sent_tokenize(raw_text)
+
+    return pdf_token, raw_text
 
 # Helper function to process (tokenize and turn into a string) .txt files
 def tokenize_txt_files(txt_filename):

@@ -13,25 +13,11 @@ from text_preprocessing.preprocessing_funcs import tokenize_pdf_files, tokenize_
 ROOT_DIR = os.path.abspath(os.getcwd())
 OUTPUT_DIR = os.path.abspath('output')
 INPUT_DIR = os.path.abspath('input')
-QUERY_DIR = os.path.abspath('query')
-
-# List of supported file extensions
-supported_files = ["*.pdf", "*.txt"]
 
 # List to gather all filenames in the 'data' directory
 all_files = list()
 query_files = list()
 similiarity_rating_avg_cumul = list()
-
-# Find all valid files in the 'data' directory and append to 'all_files' list
-for extension in supported_files:
-    for file in glob.glob(os.path.join(INPUT_DIR, extension)):
-        all_files.append(file)
-
-# Find all valid files in the 'query' directory and append to 'all_files_query' list
-for extension in supported_files:
-    for file in glob.glob(os.path.join(QUERY_DIR, extension)):
-        query_files.append(file)
 
 def run_gensim_bow(doc_1, doc_2):
     gensim_all_files = list()
@@ -50,7 +36,7 @@ def run_gensim_bow(doc_1, doc_2):
     doc_2_ext = os.path.splitext(doc_2)[1]
 
     ######### DOC_1 START #########
-    print('Entering Gensim BOW analysis ...')
+    print(f'Entering Gensim BOW analysis ... {doc_1}  --  {doc_2}')
     
     # Process in the input file
     if doc_1_ext == '.pdf':
@@ -139,8 +125,8 @@ def run_gensim_bow(doc_1, doc_2):
     total_avg = ((np.sum(avg_sims, dtype=np.float)) / len(gensim_file2_docs))
 
     # round the value and multiply by 100 to format it as percentage
-    percentage_of_similarity = round(float(total_avg) * 100)
-    # print('Similarity percentage: ' , percentage_of_similarity)
+    percentage_of_similarity = float(total_avg) * 100
+    print('Similarity percentage: ' , percentage_of_similarity)
 
     # if percentage is greater than 100
     if percentage_of_similarity >= 100:
