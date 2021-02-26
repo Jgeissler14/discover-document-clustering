@@ -1,6 +1,6 @@
 import os
 
-import tika
+import pdfplumber
 from nltk.tokenize import sent_tokenize
 
 from text_preprocessing.named_entity_extract import get_named_entity_counts
@@ -15,25 +15,23 @@ file_docs = []
 
 
 def get_text_from_pdf(filename):
-    """Function to extract the text from a PDF file using the Tika package.
+    """Function to extract the text from a PDF file using the pdfplumber package.
     Args:
         filename (str): filename of the pdf
     Returns:
-        str: raw text string of the data contained in the PDF file.
+        str: raw text string object of the data contained in the PDF file.
     """
 
-    # Initialize the tika VM
-    tika.initVM()
+    # Create str object to hold raw text
+    my_str = str()
 
-    # Import the parser
-    from tika import parser
-
-    # Extract the text
-    text = parser.from_file(filename)
-
+    # Extract text from PDF file by looping through different pages in the file
+    with pdfplumber.open(filename) as pdf:
+        for page in pdf.pages:
+            my_str = my_str + ' ' + page.extract_text().lower()
+            
     # Return the content
-
-    return text['content']
+    return my_str
 
 
 # Helper function to process (tokenize and turn into a string) .pdf files
@@ -45,6 +43,8 @@ def tokenize_pdf_files(pdf_filename):
     return pdf_token, raw_text
 
 # Helper function to process (tokenize and turn into a string) .txt files
+
+
 def tokenize_txt_files(txt_filename):
     file_docs = list()
     # Get raw string of the .txt file
