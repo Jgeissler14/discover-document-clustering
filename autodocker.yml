@@ -1,7 +1,6 @@
 container: python
-python_version: 3.8
-docker_name: Saeed Darya
-docker_email: saeed.darya@doveltech.com
+python_version: 3.8-slim-buster
+
 add_files:
   - requirements.txt
   - read_functions.py

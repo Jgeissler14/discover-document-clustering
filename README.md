@@ -32,7 +32,7 @@ The algorithm uses word vectors so the 'large' model is required.
 
 CD to the working directory and run the following command to execute the script:
 
-python app.py <num_top_words> <bow_flag>
+python main.py <gensim_flag> <num_top_words>
 
 The script will execute and will extract the text from the files located in the "input" directory as specified by the input parameters.
 
