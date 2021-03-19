@@ -77,6 +77,9 @@ def main():
            for file1, file2 in itertools.combinations(all_files_list, 2)]
 
     # Loop through the list of filename pairs
+    # TODO - Figure out a way to instantiate a spaCy object one for each of the files.
+    # We're reading each file multiple times if there are multiple combinations with that file.
+
     for x in res:
 
         # Analyze the first file
