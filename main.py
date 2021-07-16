@@ -10,6 +10,7 @@ from helper_functions import upload_file
 from helper_functions import copy_from_s3
 from helper_functions import extract_files
 from cluster import cluster
+import traceback
 
 
 # define location of supporting data files
@@ -63,7 +64,8 @@ def handler(event, lambda_context):
                 ]
             }, f)
             f.close()
-        print(str(e))
+        traceback.print_exc()
+
 
         # Upload to S3 if needed
         if AD_S3_UPLOAD_BUCKET != '':
@@ -88,13 +90,6 @@ def process(event, lambda_context):
 
     input_files = os.getenv("AD_INPUT_NAME", input_file_list).split(',')
     print(input_files)
-
-    # Discover UI uses 'results.json' file to display the output to use
-    # For information on results.json format see: ???
-    results_data = {"data": [], "data_type": "generated"}
-
-    # Results object
-    results_dict = {}
 
     #Loop through all files and copy them to DOWNLOADD_DIR
     #Extract files if needed to INPUT_DIR, if not copy them from DOWNLOAD_DIR to INPUT_DIR 

@@ -5,10 +5,14 @@ from nltk.tokenize import sent_tokenize
 
 from text_preprocessing.named_entity_extract import get_named_entity_counts
 
-# Directory variables (root dir, data dir, etc.)
-ROOT_DIR = os.path.abspath(os.getcwd())
-OUTPUT_DIR = os.path.abspath('output')
-INPUT_DIR = os.path.abspath('input')
+if os.getcwd() == '/var/task':
+    OUTPUT_DIR = '/tmp/output'
+    DOWNLOAD_DIR = '/tmp/download'
+    INPUT_DIR = '/tmp/input'
+else:
+    OUTPUT_DIR = './tmp/output'
+    DOWNLOAD_DIR = './tmp/download'
+    INPUT_DIR = './tmp/input'
 
 # Create list to store docs from the data file
 file_docs = []

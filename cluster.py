@@ -170,12 +170,12 @@ def cluster():
     output_results["data"].append({
         "title": 'Document Similarity Results',
         "filename": output_filename,
-        "link": os.path.join(OUTPUT_DIR, output_filename),
+        "link": output_filename,
     })
 
     output_results["data"].append({
         "filename": no_vector_filename,
-        "text": os.path.join(OUTPUT_DIR, no_vector_filename),
+        "text": no_vector_filename,
     })
 
     with open(os.path.join(OUTPUT_DIR, "results.json"), "w+") as f:

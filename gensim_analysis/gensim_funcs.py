@@ -11,8 +11,14 @@ from text_preprocessing.preprocessing_funcs import tokenize_pdf_files, tokenize_
 
 # Directory variables (root dir, data dir, etc.)
 ROOT_DIR = os.path.abspath(os.getcwd())
-OUTPUT_DIR = os.path.abspath('output')
-INPUT_DIR = os.path.abspath('input')
+if os.getcwd() == '/var/task':
+    OUTPUT_DIR = '/tmp/output'
+    DOWNLOAD_DIR = '/tmp/download'
+    INPUT_DIR = '/tmp/input'
+else:
+    OUTPUT_DIR = './tmp/output'
+    DOWNLOAD_DIR = './tmp/download'
+    INPUT_DIR = './tmp/input'
 
 # List to gather all filenames in the 'data' directory
 all_files = list()
