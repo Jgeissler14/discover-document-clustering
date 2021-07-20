@@ -8,6 +8,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import spacy
+import time 
+import sys
+
 
 from gensim_analysis.gensim_funcs import run_gensim_bow
 from text_preprocessing.named_entity_extract import (get_entity_log_freqs,
@@ -34,18 +37,13 @@ else:
     DOWNLOAD_DIR = './tmp/download'
     INPUT_DIR = './tmp/input'
 
+INPUT_DIR_SOURCE = INPUT_DIR + os.sep + 'source'
+INPUT_DIR_TARGET = INPUT_DIR + os.sep + 'target'
 # List of supported filetypes
 supported_files = ["*.pdf", "*.txt"]
 
 
 def cluster():
-    # This script will be executed in a container in a batch environment.
-
-    # ######### Parameters ##########
-    # Do not pass variables on the command line, read all the required parameters
-    # from the ENV variables. Discover UI will collect the parameters needed and set them as ENV variables at run time.
-    import sys
-
     # Gensim flag parameter
     try:
         gensim_flag = int(sys.argv[1])
@@ -68,33 +66,29 @@ def cluster():
     output_results = {"data": [], "data_type": "generated"}
 
     # Initialize df to store comparison results
-    results_df = pd.DataFrame(columns=['file_1', 'file_2'])
+    results_df = pd.DataFrame(columns=['File 1', 'File 2'])
 
     # Initialize empty lists to store results
     all_ents_with_no_vector = list()
     similiarity_rating_avg_cumul = list()
-    all_files_list = list()
+    all_target_files_list = list()
+    all_source_files_list = list()
 
     # Find all valid files in the 'input' directory and append to 'all_files_list' list
     for extension in supported_files:
-        for idx, filepath in enumerate(glob.glob(os.path.join(INPUT_DIR, extension))):
-            all_files_list.append(os.path.basename(filepath))
+        for idx, filepath in enumerate(glob.glob(os.path.join(INPUT_DIR_TARGET, extension))):
+            all_target_files_list.append(os.path.basename(filepath))
+        for idx, filepath in enumerate(glob.glob(os.path.join(INPUT_DIR_SOURCE, extension))):
+            all_source_files_list.append(os.path.basename(filepath))
 
-    # Create list of all document pairs (without replacement)
-    res = [(file1, file2)
-           for file1, file2 in itertools.combinations(all_files_list, 2)]
+    print('all_source_files_list', all_source_files_list)
+    for file in all_source_files_list:
+        pdf_entities_1 = read_file(nlp, INPUT_DIR_SOURCE + os.sep + file)
 
-    # Loop through the list of filename pairs
-    # TODO - Figure out a way to instantiate a spaCy object one for each of the files.
-    # We're reading each file multiple times if there are multiple combinations with that file.
-
-    for x in res:
-
-        # Analyze the first file
-        pdf_entities_1 = read_file(nlp, x[0])
+    for x in all_target_files_list:
 
         # Analyze the second file
-        pdf_entities_2 = read_file(nlp, x[1])
+        pdf_entities_2 = read_file(nlp,  INPUT_DIR_TARGET + os.sep + x)
 
         # Get similarity ratings between the entities in the two docs
         sim_ratings, num_duplicate_entities, ents_with_no_vector = get_entity_similarities(nlp, num_top_words,
@@ -125,7 +119,7 @@ def cluster():
 
         # Create results_df file
         results_df = results_df.append(
-            {'file_1': x[0], 'file_2': x[1]}, ignore_index=True)
+            {'File 1': all_source_files_list[0], 'File 2': x}, ignore_index=True)
 
     # Finalize output file
     print('List of all similarity ratings ... ', similiarity_rating_avg_cumul)
@@ -139,11 +133,6 @@ def cluster():
     # Create set of entities without word vectors
     ent_set = set(all_ents_with_no_vector)
     print(f'Ents with no vector ... {ent_set}')
-
-    # Append list of entities without word vectors to a saved text file
-    no_vector_filename = 'no_vector_entities.txt'
-    with open(os.path.join(OUTPUT_DIR, no_vector_filename), 'a') as filehandle:
-        filehandle.writelines("%s\n" % ent for ent in ent_set)
 
     # ############# Named Entity analysis (end) ##############
 
@@ -166,36 +155,18 @@ def cluster():
     print(f'Saving results to {OUTPUT_DIR} directory ...')
     output_filename = f'result_{today_str}.csv'
     results_df.to_csv(os.path.join(OUTPUT_DIR, output_filename))
+    output_string = results_df.to_string()
 
     output_results["data"].append({
         "title": 'Document Similarity Results',
-        "filename": output_filename,
-        "link": output_filename,
+        "text": output_string,
     })
-
     output_results["data"].append({
-        "filename": no_vector_filename,
-        "text": no_vector_filename,
+        "title": 'CSV Results Output',
+        "link": output_filename,
     })
 
     with open(os.path.join(OUTPUT_DIR, "results.json"), "w+") as f:
         print("Writing results.json file")
         json.dump(output_results, f)
         f.close()
-
-
-if __name__ == '__main__':
-    try:
-        main()
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(str(tb))
-        with open(os.path.join(OUTPUT_DIR, "results.json"), "w+") as f:
-            print("Writing errors in results.json file")
-            json.dump({
-                "data_type": "generated",
-                "data": [
-                    {"error": str(tb), "title": "Error"}
-                ]
-            }, f)
-            f.close()

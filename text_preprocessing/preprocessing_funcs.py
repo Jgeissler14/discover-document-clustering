@@ -41,7 +41,7 @@ def get_text_from_pdf(filename):
 # Helper function to process (tokenize and turn into a string) .pdf files
 def tokenize_pdf_files(pdf_filename):
 
-    raw_text = get_text_from_pdf(INPUT_DIR + os.sep + pdf_filename)
+    raw_text = get_text_from_pdf(pdf_filename)
     pdf_token = sent_tokenize(raw_text)
 
     return pdf_token, raw_text
@@ -52,11 +52,11 @@ def tokenize_pdf_files(pdf_filename):
 def tokenize_txt_files(txt_filename):
     file_docs = list()
     # Get raw string of the .txt file
-    with open(INPUT_DIR + os.sep + txt_filename) as f:
+    with open(txt_filename) as f:
         raw_text = f.read()
         f.close()
     # Tokenize the sentences in the .txt file and save to list object
-    with open(INPUT_DIR + os.sep + txt_filename) as f:
+    with open(txt_filename) as f:
         tokens = sent_tokenize(f.read())
         for line in tokens:
             file_docs.append(line)

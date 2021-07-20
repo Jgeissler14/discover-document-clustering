@@ -1,5 +1,5 @@
-FROM public.ecr.aws/lambda/python:3.8
-#FROM python:3.8
+#FROM public.ecr.aws/lambda/python:3.8
+FROM python:3.8
 LABEL Dovel Technologies LLC "discover@doveltech.com"
 
 WORKDIR /var/task
@@ -15,5 +15,5 @@ ADD ./text_preprocessing ./text_preprocessing
 ADD ./cluster.py .
 ADD ./gensim_analysis ./gensim_analysis
 
-#CMD ["python", "./main.py"]
-CMD [ "main.handler" ]
+CMD ["python", "./main.py"]
+#CMD [ "main.handler" ]
