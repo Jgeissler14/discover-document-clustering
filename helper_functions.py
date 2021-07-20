@@ -53,9 +53,13 @@ def extract_files(filename, INPUT_DIR):
     S3 = boto3.client('s3')
 
     if filename.endswith(".zip"):
-        #print("Zip file")
-        with zipfile.ZipFile(filename, "r") as zip_file:
-            zip_file.extractall(INPUT_DIR)
+            #print("Zip file")
+        with zipfile.ZipFile(filename) as zip:
+            for zip_info in zip.infolist():
+                if zip_info.filename[-1] == '/':
+                    continue
+                zip_info.filename = os.path.basename(zip_info.filename)
+                zip.extract(zip_info, INPUT_DIR)
     elif filename.endswith(".tar"):
         #print("Tar file")
         with tarfile.open(filename, "r:") as tar_file:
