@@ -11,7 +11,7 @@ from helper_functions import copy_from_s3
 from helper_functions import extract_files
 from cluster import cluster
 import traceback
-
+import nltk
 
 # define location of supporting data files
 DATA_DIR = os.path.join(os.getcwd(), 'data')
@@ -42,6 +42,7 @@ S3_DATA_BUCKET = os.getenv("S3_DATA_BUCKET", '')
 S3_DATA_FOLDER = os.getenv("S3_DATA_FOLDER", '')
 
 results_json_fn = "results.json"
+
 
 #separate files by a comma in a single string if using multiple files.
 input_file_list = ""
